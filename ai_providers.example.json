@@ -1,0 +1,37 @@
+{
+  "active": "bailian",
+  "providers": {
+    "volcano": {
+      "base_url": "https://ark.cn-beijing.volces.com/api/v3",
+      "model": "doubao-visual-pro-32k",
+      "api_key": "YOUR_VOLCANO_API_KEY",
+      "region": "",
+      "secret_id": "",
+      "secret_key": ""
+    },
+    "bailian": {
+      "base_url": "https://dashscope.aliyuncs.com/api/v1/services/aigc/multimodal-generation/generation",
+      "model": "qwen-vl-max-latest",
+      "api_key": "YOUR_BAILIAN_API_KEY",
+      "region": "",
+      "secret_id": "",
+      "secret_key": ""
+    },
+    "tencent": {
+      "base_url": "https://hunyuan.tencentcloudapi.com",
+      "model": "hunyuan-vision",
+      "api_key": "",
+      "region": "ap-guangzhou",
+      "secret_id": "YOUR_TENCENT_SECRET_ID",
+      "secret_key": "YOUR_TENCENT_SECRET_KEY"
+    },
+    "openai": {
+      "base_url": "https://api.openai.com/v1",
+      "model": "gpt-4o-mini",
+      "api_key": "YOUR_OPENAI_API_KEY",
+      "region": "",
+      "secret_id": "",
+      "secret_key": ""
+    }
+  }
+}

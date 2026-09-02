@@ -1,0 +1,24 @@
+# 协同录入系统（coop-base 通用版）· 运行依赖清单
+# 安装：pip install -r requirements.txt
+# 说明：下列均为「运行期」依赖；OCR 模型随 rapidocr_onnxruntime 包内置，安装后即可离线使用。
+# 打包：pyinstaller 由 server.spec / client.spec 统一配置，见 build.bat（打包依赖另行安装）。
+
+# ---- Web 服务与主框架 ----
+flask>=3.0
+
+# ---- 文档导出（Word 结算单 / Excel 台账）----
+python-docx>=1.1
+openpyxl>=3.1
+
+# ---- 本地离线 OCR（发票识别，模型随包内置，识别数据不出本机）----
+rapidocr_onnxruntime>=1.2
+# OCR 直接依赖（app.py 中显式 import，一并锁定以免间接依赖漂移）
+pillow>=10.0          # 图片读取与格式转换（PIL / Image）
+numpy>=1.24           # 图像数组，OCR 引擎输入
+opencv-python>=4.8    # RapidOCR 内部图像预处理（cv2）
+onnxruntime>=1.15     # 模型推理运行时
+
+# ---- 文本型电子发票 PDF 精确解析（pdfplumber，配合 RapidOCR 组成批量导入识别链路）----
+pdfplumber>=0.11
+# ---- 扫描件 PDF 栅格化兜底（无文本层时转图送 OCR）----
+pymupdf>=1.24

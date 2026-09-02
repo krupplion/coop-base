@@ -1,0 +1,44 @@
+# ===== Python / 构建产物 =====
+__pycache__/
+*.pyc
+*.pyo
+build/
+dist/
+*.spec.bak
+
+# ===== 打包产物（体积大，严禁提交）=====
+# 注意：.gitignore 中 # 仅在行首为注释，行尾注释会使整条规则失效
+# NSIS 安装包输出目录（约 90 MB）
+out/
+# 历史 dist 备份目录
+dist_backup*/
+# NSIS 安装工具链（仅打包分发时需要，体积大，不入库）
+install/
+# 临时生成的图片 / 原型稿
+generated/
+
+# ===== 用户数据（含密钥与数据库，严禁提交）=====
+data/
+# 实际 AI 服务商密钥配置文件（由界面或环境变量生成，存放于 data/ 下）
+ai_providers.json
+*.db
+*.db-journal
+*.db-wal
+
+# ===== 环境变量（含密钥，严禁提交）=====
+.env
+.env.local
+
+# ===== 临时脚本 / 日志 / 预览产物 =====
+_*.py
+*.log
+server_run.log
+_server*.log
+_cdp_profile*
+*样例.docx
+
+# ===== 编辑器 / 系统 =====
+.vscode/
+.idea/
+.DS_Store
+.workbuddy/

@@ -1,0 +1,3508 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>律师工作台</title>
+<style>
+:root{
+  --kd-blue:#1e6fd9; --kd-blue-dark:#1559b3; --kd-bg:#f3f5f9;
+  --kd-border:#e4e8f0; --kd-text:#2b3445; --kd-sub:#8a94a6;
+  --kd-red:#e6432d; --kd-green:#18a058;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:-apple-system,"Microsoft YaHei","PingFang SC","Segoe UI",sans-serif;
+  background:var(--kd-bg);color:var(--kd-text);font-size:14px}
+/* ---------- 登录页 ---------- */
+#loginView{display:flex;align-items:center;justify-content:center;min-height:100vh;
+  background:linear-gradient(135deg,#1e6fd9 0%,#1559b3 100%)}
+.login-card{background:#fff;border-radius:8px;padding:40px 44px;width:380px;
+  box-shadow:0 12px 40px rgba(0,0,0,.18)}
+.login-card h1{font-size:20px;margin-bottom:4px}
+.login-card .sub{color:var(--kd-sub);font-size:13px;margin-bottom:28px}
+/* ---------- 主框架 ---------- */
+#appView{display:none;min-height:100vh}
+.topbar{height:52px;background:var(--kd-blue);color:#fff;display:flex;align-items:center;
+  padding:0 20px;position:fixed;top:0;left:0;right:0;z-index:100}
+.topbar .logo{font-size:16px;font-weight:600}
+.topbar .right{margin-left:auto;display:flex;align-items:center;gap:16px;font-size:13px}
+.topbar .role-tag{background:rgba(255,255,255,.2);border-radius:3px;padding:2px 8px}
+.topbar a{color:#fff;text-decoration:none;cursor:pointer}
+.layout{display:flex;padding-top:52px;min-height:100vh}
+.sidebar{width:190px;background:#fff;border-right:1px solid var(--kd-border);
+  position:fixed;top:52px;bottom:0;overflow-y:auto;padding:10px 0}
+.sidebar .item{padding:11px 20px;cursor:pointer;color:var(--kd-text);
+  border-left:3px solid transparent;display:flex;align-items:center;gap:8px}
+.sidebar .item:hover{background:#f0f5fd}
+.sidebar .item.active{color:var(--kd-blue);border-left-color:var(--kd-blue);
+  background:#eaf2fd;font-weight:600}
+.sidebar .item svg{width:16px;height:16px;flex:none}
+.main{margin-left:190px;flex:1;padding:20px;min-width:0}
+/* ---------- 通用组件 ---------- */
+.card{background:#fff;border:1px solid var(--kd-border);border-radius:6px;
+  padding:18px 20px;margin-bottom:16px}
+.card h3{font-size:15px;margin-bottom:14px;padding-bottom:10px;
+  border-bottom:1px solid var(--kd-border)}
+.stat-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.stat{background:#fff;border:1px solid var(--kd-border);border-radius:6px;padding:16px 18px}
+.stat .num{font-size:24px;font-weight:700;color:var(--kd-blue);margin-top:6px}
+.stat .label{color:var(--kd-sub);font-size:13px}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f7f9fc;text-align:left;padding:9px 10px;border-bottom:1px solid var(--kd-border);
+  color:#5a6478;font-weight:600;white-space:nowrap}
+td{padding:9px 10px;border-bottom:1px solid #f0f2f7;vertical-align:middle}
+tr:hover td{background:#f8faff}
+.btn{display:inline-block;padding:7px 16px;border-radius:4px;border:1px solid var(--kd-border);
+  background:#fff;color:var(--kd-text);cursor:pointer;font-size:13px;min-height:32px}
+.btn:hover{border-color:var(--kd-blue);color:var(--kd-blue)}
+.btn.primary{background:var(--kd-blue);border-color:var(--kd-blue);color:#fff}
+.btn.primary:hover{background:var(--kd-blue-dark)}
+.btn.danger{color:var(--kd-red);border-color:#f3c2bb}
+.btn.danger:hover{background:#fdf0ee}
+.btn.sm{padding:3px 10px;font-size:12px;min-height:26px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+input,select,textarea{border:1px solid var(--kd-border);border-radius:4px;padding:7px 10px;
+  font-size:14px;font-family:inherit;width:100%;background:#fff;color:var(--kd-text)}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--kd-blue);
+  box-shadow:0 0 0 2px rgba(30,111,217,.12)}
+.form-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+  gap:12px 16px;margin-bottom:12px}
+.form-item label{display:block;font-size:12px;color:var(--kd-sub);margin-bottom:4px}
+.toolbar{display:flex;gap:10px;margin-bottom:14px;flex-wrap:wrap;align-items:center}
+.toolbar input{width:240px}
+.money{color:var(--kd-red);font-weight:600}
+.tag{display:inline-block;padding:1px 8px;border-radius:3px;font-size:12px;background:#eef2f8}
+.tag.doing{background:#e3f0ff;color:#1e6fd9}
+.tag.done{background:#e6f7ee;color:#18a058}
+.tag.pause{background:#f2f3f5;color:#8a8f99}
+.tag.red{background:#fdecea;color:var(--kd-red)}
+/* 弹窗 */
+.modal-mask{position:fixed;inset:0;background:rgba(30,40,60,.4);display:none;
+  align-items:center;justify-content:center;z-index:200}
+.modal{background:#fff;border-radius:8px;width:560px;max-width:94vw;max-height:88vh;
+  overflow-y:auto;padding:24px 26px}
+.modal h3{font-size:16px;margin-bottom:18px}
+.modal .foot{margin-top:18px;text-align:right;display:flex;gap:10px;justify-content:flex-end}
+.toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);background:#2b3445;
+  color:#fff;padding:9px 22px;border-radius:4px;z-index:300;display:none;font-size:13px}
+.toast.err{background:var(--kd-red)}
+.hint{color:var(--kd-sub);font-size:12px;line-height:1.7}
+.proto-box{margin-top:10px;padding:12px 14px;background:#f7faff;border:1px solid #dde7f5;border-radius:8px;font-size:13px;line-height:1.7}
+.proto-box .tag{margin-left:6px}
+.proto-detail{margin-top:6px;color:#33415a;white-space:pre-wrap}
+.ai-providers{margin-top:10px}
+.ai-prov-h{margin-bottom:10px;font-size:13px}
+.ai-prov-h select{padding:6px 10px;border:1px solid var(--kd-border);border-radius:6px;min-width:220px}
+.ai-prov-form{margin-bottom:12px;padding:12px 14px;background:#f8fafc;border:1px solid #e6ebf2;border-radius:8px}
+.ai-prov-title{font-weight:600;margin-bottom:8px;font-size:13px}
+.ai-protocols{margin-top:6px}
+.ai-protocols h4{font-size:13px;color:var(--kd-sub)}
+.proto-item{margin-bottom:10px;padding:10px 12px;background:#f8fafc;border:1px solid #e6ebf2;border-radius:8px}
+.proto-item .tag{margin-left:6px}
+.page{display:none}
+.page.active{display:block}
+.empty{color:var(--kd-sub);text-align:center;padding:30px 0}
+.empty-guide{margin-top:12px;padding:14px 18px;background:linear-gradient(135deg,#eef5ff,#f5fbff);border:1px dashed #b6d4f5;border-radius:8px;color:#345}
+.empty-guide h4{margin:0 0 6px;font-size:14px;color:#1e6fd9}
+.empty-guide ol{margin:6px 0 0 18px;padding:0;font-size:13px;line-height:1.9}
+.empty-guide a{color:#1e6fd9;cursor:pointer;text-decoration:underline}
+.settle-guide{background:linear-gradient(135deg,#fff7e6,#fffdf3);border:1px solid #f5d28a}
+.settle-guide h3{color:#b8860b;margin-bottom:8px}
+.settle-steps{margin:8px 0 0 20px;padding:0;line-height:1.9;font-size:13px;color:#3a3a3a}
+.settle-steps li{margin-bottom:4px}
+.settle-steps a{color:#1e6fd9;cursor:pointer;text-decoration:underline}
+.settle-steps b{color:#1e6fd9}
+/* 功能卡片 */
+.fc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:14px}
+.fc-card{background:#fff;border:1px solid var(--kd-border);border-radius:6px;padding:16px 18px;
+  cursor:pointer;transition:all .15s;display:flex;flex-direction:column;gap:8px}
+.fc-card:hover{border-color:var(--kd-blue);box-shadow:0 4px 16px rgba(30,111,217,.12);transform:translateY(-2px)}
+.fc-card .fc-top{display:flex;align-items:center;gap:10px}
+.fc-card .fc-ico{width:34px;height:34px;border-radius:6px;background:#eaf2fd;color:var(--kd-blue);
+  display:flex;align-items:center;justify-content:center;flex:none}
+.fc-card .fc-ico svg{width:18px;height:18px}
+.fc-card .fc-name{font-weight:600;font-size:14px}
+.fc-card .fc-desc{color:var(--kd-sub);font-size:12px;line-height:1.6;flex:1}
+.fc-card .fc-path{font-size:11px;color:var(--kd-blue);border-top:1px dashed var(--kd-border);padding-top:8px}
+/* 字段映射行 */
+.map-row{display:flex;gap:8px;align-items:center;margin-bottom:8px}
+.map-row select{flex:1}
+.map-row .map-del{flex:none}
+/* 案件成员输入行：两行自适应，按比例分配，宽度不足自动换行 */
+.member-row{display:grid;grid-template-columns:minmax(160px,1.4fr) minmax(120px,1fr) auto;gap:8px;align-items:center;margin-bottom:8px}
+.member-row .member-amounts{display:contents}
+.member-row input[type="number"]{min-width:88px;width:100%}
+.member-row select{min-width:120px;width:100%}
+.member-row .member-name{min-width:160px}
+@media (max-width: 720px){.member-row{grid-template-columns:1fr 1fr}.member-row .member-name{grid-column:span 2}.member-row button{grid-column:span 2}}
+.member-preview{background:#f5f7fa;border:1px dashed var(--kd-border);border-radius:4px;padding:6px 12px;font-size:12px;color:var(--kd-sub);margin-top:6px}
+.member-preview b{color:var(--kd-blue)}
+.member-preview .money{color:var(--kd-green);font-weight:600}
+/* 模板字段勾选列表 */
+.tpl-fields{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.tpl-fields label{display:flex;align-items:center;gap:5px;padding:5px 10px;border:1px solid var(--kd-border);
+  border-radius:4px;font-size:13px;cursor:pointer;background:#fafbfd}
+.tpl-fields label:hover{border-color:var(--kd-blue)}
+/* 案件面板：圆形进度 + 甘特图 */
+.panel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,1fr));gap:16px}
+.ring-wrap{display:flex;align-items:center;gap:18px;padding:8px 0}
+.ring-legend{display:flex;flex-direction:column;gap:6px;font-size:13px}
+.gantt-row{display:grid;grid-template-columns:120px 1fr 40px;gap:10px;align-items:center;margin-bottom:8px;font-size:12px}
+.gantt-bar{height:14px;background:#eef2f8;border-radius:7px;overflow:hidden}
+.gantt-fill{height:100%;background:linear-gradient(90deg,#1e6fd9,#4a90e2);border-radius:7px}
+.gantt-fill.done{background:linear-gradient(90deg,#18a058,#43c07d)}
+.gantt-fill.pause{background:#e6b84c}
+.mini-stat{display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px dashed #f0f2f7;font-size:13px}
+.mini-stat:last-child{border-bottom:none}
+.panel-sub{font-size:13px;font-weight:600;margin:12px 0 6px;color:#5a6478}
+/* 案件弹窗模块 Tab */
+.mod-tabs{display:flex;gap:4px;border-bottom:1px solid var(--kd-border);margin-bottom:14px;flex-wrap:wrap}
+.mod-tab{padding:7px 14px;cursor:pointer;font-size:13px;color:var(--kd-sub);border:1px solid transparent;
+  border-bottom:none;border-radius:4px 4px 0 0;background:transparent;margin-bottom:-1px}
+.mod-tab:hover{color:var(--kd-blue)}
+.mod-tab.active{color:var(--kd-blue);border-color:var(--kd-border);background:#fff;font-weight:600}
+.mod-pane{display:none}
+.mod-pane.active{display:block}
+.mod-title{font-size:13px;font-weight:600;color:#5a6478;margin:12px 0 8px;padding-bottom:6px;
+  border-bottom:1px dashed var(--kd-border)}
+.mod-title:first-child{margin-top:0}
+tr.settle-ready{background:#e6f7ee !important}
+tr.settle-ready td{background:#e6f7ee !important}
+tr.settle-ready:hover td{background:#d8f2e2 !important}
+.tag.ready{background:#e6f7ee;color:#18a058;font-weight:600}
+
+
+.conflict-tip{background:#fff8e6;border:1px solid #f0d488;color:#8a6d1a;
+  border-radius:4px;padding:8px 12px;font-size:12px;margin-bottom:12px;display:none}
+@media(max-width:768px){
+  .sidebar{width:56px}.sidebar .item span{display:none}
+  .main{margin-left:56px;padding:12px}
+  .modal{width:94vw}
+}
+
+/* ---------- 运营看板 ---------- */
+.view-toggle{display:inline-flex;border:1px solid var(--kd-border);border-radius:4px;overflow:hidden;margin-right:auto}
+.view-toggle button{background:#f5f7fa;border:none;padding:6px 14px;font-size:13px;cursor:pointer;color:#5a6478}
+.view-toggle button.active{background:var(--kd-blue);color:#fff;font-weight:600}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:14px;margin-bottom:16px}
+.kpi-card{background:#fff;border:1px solid var(--kd-border);border-radius:6px;padding:14px;position:relative}
+.kpi-card .kpi-label{font-size:12px;color:#5a6478;margin-bottom:6px}
+.kpi-card .kpi-value{font-size:26px;font-weight:700;color:var(--kd-blue);line-height:1}
+.kpi-card .kpi-unit{font-size:14px;font-weight:400}
+.kpi-card .kpi-trend{font-size:12px;margin-top:6px}
+.kpi-card .kpi-trend.up{color:var(--kd-green)}
+.kpi-card .kpi-trend.down{color:var(--kd-red)}
+.kpi-card .kpi-sub{font-size:11px;color:#8a8f99;margin-top:4px}
+.kanban-board{display:flex;gap:12px;overflow-x:auto;padding-bottom:8px;min-height:320px}
+.kanban-col{flex:0 0 260px;background:#f5f7fa;border-radius:6px;border:1px solid var(--kd-border);display:flex;flex-direction:column;max-height:calc(100vh - 340px)}
+.kanban-col-header{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;border-bottom:1px solid var(--kd-border);background:#fff;border-radius:6px 6px 0 0}
+.kanban-col-header .col-title{display:flex;align-items:center;gap:8px;font-weight:600;font-size:13px}
+.kanban-col-header .col-dot{width:8px;height:8px;border-radius:50%}
+.kanban-col-header .col-count{font-size:12px;color:#8a8f99;background:#f2f3f5;padding:2px 8px;border-radius:10px}
+.kanban-col-body{flex:1;overflow-y:auto;padding:10px}
+.kanban-col-body.drag-over{background:#e3f0ff}
+.kanban-card{background:#fff;border:1px solid var(--kd-border);border-radius:6px;padding:10px;margin-bottom:10px;cursor:grab;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+.kanban-card.dragging{opacity:.5}
+.kanban-card .case-title{font-weight:600;font-size:13px;margin-bottom:6px;color:var(--kd-text)}
+.kanban-card .case-meta{font-size:11px;color:#5a6478;line-height:1.6}
+.kanban-card .case-footer{display:flex;align-items:center;justify-content:space-between;margin-top:8px}
+.kanban-card .exec-badge{font-size:10px;padding:2px 6px;border-radius:4px;color:#fff}
+.kanban-card .money-sm{font-size:12px;font-weight:600}
+.kanban-empty{text-align:center;color:#8a8f99;font-size:12px;padding:20px 0}
+.case-avatar{width:24px;height:24px;border-radius:50%;background:var(--kd-blue);color:#fff;display:inline-flex;align-items:center;justify-content:center;font-size:11px;margin-right:6px}
+/* 状态下拉组件 */
+.status-select-wrap{position:relative;display:inline-block}
+.status-select-trigger{display:flex;align-items:center;gap:6px;padding:5px 10px;border:1px solid var(--kd-border);border-radius:4px;background:#fff;cursor:pointer;font-size:13px;min-width:120px}
+.status-select-trigger .dot{width:8px;height:8px;border-radius:50%}
+.status-select-layer{position:absolute;left:0;top:100%;margin-top:4px;background:#fff;border:1px solid var(--kd-border);border-radius:6px;box-shadow:0 4px 12px rgba(0,0,0,.1);z-index:100;min-width:220px;display:none}
+.status-select-layer.open{display:block}
+.status-select-filter{padding:8px;border-bottom:1px solid var(--kd-border)}
+.status-select-filter input{width:100%;border:1px solid var(--kd-border);border-radius:4px;padding:5px 8px;font-size:12px}
+.status-select-group{margin:6px 0}
+.status-select-group-title{font-size:11px;color:#8a8f99;padding:4px 12px;text-transform:uppercase}
+.status-select-option{display:flex;align-items:center;gap:8px;padding:7px 12px;cursor:pointer;font-size:13px}
+.status-select-option:hover{background:#f5f7fa}
+.status-select-option.disabled{color:#b0b5bd;cursor:not-allowed}
+.status-select-option .dot{width:8px;height:8px;border-radius:50%}
+.status-select-option.selected{background:var(--kd-blue);color:#fff}
+/* 回款柱状图 / 执行面板 */
+.mini-bar-chart{display:flex;align-items:flex-end;gap:8px;height:120px;padding:10px 0}
+.mini-bar{flex:1;background:var(--kd-blue);border-radius:4px 4px 0 0;position:relative;min-height:4px}
+.mini-bar-label{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:11px;color:#5a6478;white-space:nowrap}
+.mini-bar-rate{position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:11px;color:var(--kd-blue);font-weight:600}
+.exec-panel-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;font-size:12px}
+.exec-panel-row .exec-name{flex:0 0 80px}
+.exec-panel-row .exec-bar{flex:1;height:8px;background:#ebedf0;border-radius:4px;overflow:hidden}
+.exec-panel-row .exec-fill{height:100%;border-radius:4px}
+.exec-panel-row .exec-count{flex:0 0 60px;text-align:right;color:#5a6478}
+/* 移动端底部弹层 */
+.mobile-sheet{position:fixed;left:0;right:0;bottom:0;background:#fff;border-radius:12px 12px 0 0;box-shadow:0 -4px 20px rgba(0,0,0,.15);z-index:200;transform:translateY(100%);transition:transform .2s;max-height:70vh;overflow-y:auto}
+.mobile-sheet.open{transform:translateY(0)}
+.mobile-sheet-mask{position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:199;display:none}
+.mobile-sheet-mask.open{display:block}
+@media(max-width:768px){
+  .kpi-grid{grid-template-columns:repeat(2,1fr)}
+  .kanban-col{flex:0 0 85vw}
+  .status-select-layer{position:fixed;left:10px;right:10px;top:auto;bottom:10px}
+}
+</style>
+</head>
+<body>
+
+<!-- ========== 登录页 ========== -->
+<div id="loginView">
+  <div class="login-card">
+    <h1>律师工作台</h1>
+    <div class="form-item" style="margin-bottom:14px"><label>用户名</label>
+      <input id="loginUser" placeholder="用户名" autocomplete="username"></div>
+    <div class="form-item" style="margin-bottom:22px"><label>密码</label>
+      <input id="loginPwd" type="password" placeholder="密码" autocomplete="current-password"
+        onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn primary" id="loginBtn" style="width:100%;height:38px" onclick="doLogin()">登 录</button>
+    <div id="loginErr" style="display:none;margin-top:12px;background:#fdecea;color:#e6432d;
+      border-radius:4px;padding:8px 12px;font-size:13px"></div>
+    <div class="hint" style="margin-top:16px">首次使用默认账号 admin / 123456，登录后请立即修改密码。</div>
+  </div>
+</div>
+
+<!-- ========== 主界面 ========== -->
+<div id="appView">
+  <div class="topbar">
+    <div class="logo" id="firmName">律师工作台</div>
+    <div class="right">
+      <span id="curUser"></span>
+      <span class="role-tag" id="curRole"></span>
+      <a onclick="openPwdModal()">修改密码</a>
+      <a onclick="doLogout()">退出</a>
+    </div>
+  </div>
+  <div class="layout">
+    <div class="sidebar" id="sidebar"></div>
+    <div class="main">
+
+      <!-- 工作台 -->
+      <div class="page" id="page-home">
+        <div class="stat-grid" id="statGrid"></div>
+        <div class="card" style="margin-top:16px"><h3>功能导航</h3>
+          <div class="fc-grid" id="featureCards"></div></div>
+        <div class="card" style="margin-top:16px"><h3>最近更新案件</h3>
+          <div id="recentCases"></div></div>
+      </div>
+
+      <!-- 运营看板 -->
+      <div class="page" id="page-dashboard">
+        <div class="card"><h3>统计区间</h3>
+          <div class="toolbar">
+            <input id="dashStart" type="date" style="width:160px" onchange="loadDashboard()">
+            <span class="hint">至</span>
+            <input id="dashEnd" type="date" style="width:160px" onchange="loadDashboard()">
+            <button class="btn primary" onclick="loadDashboard()">查询</button>
+            <button class="btn" onclick="dashQuick('month')">本月</button>
+            <button class="btn" onclick="dashQuick('lastmonth')">上月</button>
+            <button class="btn" onclick="dashQuick('quarter')">本季</button>
+            <button class="btn" onclick="dashQuick('year')">本年</button>
+            <button class="btn" onclick="dashQuick('all')">全部</button>
+            <select id="dashDim" style="width:180px;min-width:180px" onchange="loadDashboard()">
+              <option value="owner">人员口径：主承办人</option>
+              <option value="developer">人员口径：开发人</option>
+              <option value="member">人员口径：小组成员</option>
+            </select>
+          </div>
+          <div class="hint">
+            统计口径：<b>立项</b>=区间内建档；<b>结项</b>=状态「已结案」且区间内更新；
+            <b>暂停</b>=状态「暂停」且区间内更新；<b>进行中</b>=期末（截至区间末日）仍在办；
+            <b>回款率</b>=区间回款金额 ÷ 区间案件代理费合计。
+          </div>
+          <div id="dashRangeTip" style="margin-top:8px"></div>
+          <div id="dashEmptyHint" class="empty-guide" style="display:none"></div>
+        </div>
+        <div class="stat-grid" id="dashStatGrid" style="margin-top:16px"></div>
+        <div class="card" style="margin-top:16px"><h3>一、区间案件 / 回款 / 合同概览</h3>
+          <div id="dashOverview"></div></div>
+        <div class="card" style="margin-top:16px"><h3>二、历史年度对比（全量，含同比）</h3>
+          <div id="dashYearly"></div></div>
+        <div class="card" style="margin-top:16px"><h3>三、区间月度对比</h3>
+          <div id="dashMonthly"></div></div>
+        <div class="card" style="margin-top:16px"><h3>四、项目进度（按区间）</h3>
+          <div id="dashProjects"></div></div>
+        <div class="card" style="margin-top:16px"><h3>五、人员业绩（按区间）</h3>
+          <div id="dashPersons"></div></div>
+      </div>
+
+      <!-- 案件管理 -->
+      <div class="page" id="page-case">
+        <div class="card">
+          <div class="toolbar">
+            <input id="caseKw" placeholder="搜索案号 / 客户 / 负责人 / 开发人 / 案由 / 原告 / 被告"
+              onkeydown="if(event.key==='Enter')loadCases()">
+            <button class="btn" onclick="loadCases()">查询</button>
+            <div class="view-toggle">
+              <button id="btnViewList" class="active" onclick="switchCaseView('list')">列表</button>
+              <button id="btnViewKanban" onclick="switchCaseView('kanban')">看板</button>
+            </div>
+            <button class="btn primary" id="btnCaseNew" onclick="openCaseModal()">+ 新建案件</button>
+            <button class="btn" id="btnCaseExport" onclick="exportCases()">导出 Excel</button>
+            <button class="btn" id="btnCheckSettle" onclick="checkSettleAll()">判断提成是否可结算</button>
+          </div>
+          <div class="conflict-tip" id="conflictTip"></div>
+          <div id="caseListWrap">
+            <div style="overflow-x:auto"><table id="caseTable">
+              <thead><tr>
+                <th>案号</th><th>客户名称</th><th>维护人</th><th>主承办人</th><th>协办人</th>
+                <th>代理费(¥)</th><th>代垫诉讼费(¥)</th><th>开票金额(¥)</th><th>状态</th>
+                <th>更新人/时间</th><th>操作</th>
+              </tr></thead><tbody></tbody></table></div>
+          </div>
+          <div id="caseKanbanWrap" style="display:none">
+            <div class="kpi-grid" id="caseKpiGrid"></div>
+            <div class="toolbar" style="margin-bottom:10px">
+              <span class="hint">状态筛选：</span><span id="caseStatusFilterWrap"></span>
+              <span class="hint" style="margin-left:12px">执行状态：</span><span id="caseExecStatusFilterWrap"></span>
+              <button class="btn sm" onclick="resetKanbanFilters()">重置</button>
+            </div>
+            <div class="kanban-board" id="kanbanBoard"></div>
+            <div style="display:flex;gap:16px;margin-top:16px">
+              <div class="card" style="flex:1"><h3>本月回款进度</h3><div id="kanbanRecoveryChart" class="mini-bar-chart"></div></div>
+              <div class="card" style="flex:1"><h3>执行案件进度</h3><div id="kanbanExecPanel"></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- 薪酬计算 -->
+      <div class="page" id="page-salary">
+        <div class="card"><h3>薪酬试算结果（以案号为导向）</h3>
+        <div class="hint" style="margin-bottom:10px">
+          公式：<b>max(到账金额 × 提成率, 保底金额) + 固定金额</b> → 四舍五入取整。<br>
+          待结算区列出可结算案件；筛选后点击「一键确定结算」即可批量生成 Word 结算单，并自动转入已结算区。
+        </div>
+        <div class="toolbar">
+          <input id="salaryMonth" type="month" style="width:160px" title="按提成结算月筛选">
+          <input id="salaryKw" placeholder="搜索案号 / 小组成员" style="width:200px">
+          <button class="btn" onclick="calcSalary()">重新计算</button>
+          <button class="btn" onclick="$('salaryMonth').value='';$('salaryKw').value='';calcSalary()">显示全部</button>
+        </div>
+        <div id="salaryResult"></div>
+        </div>
+      </div>
+
+      <!-- 结算单 -->
+      <div class="page" id="page-settle">
+        <div class="card settle-guide">
+          <h3>操作指引 · 结算单生成流程</h3>
+          <div class="hint" style="margin-bottom:10px">按下列步骤完成「案件 → 提成判断 → 批量结算单 → 结案审批表」的端到端流程；自定义模板可复用，跳过该步骤不影响主流程。</div>
+          <ol class="settle-steps">
+            <li><b>录入/维护案件信息</b>：前往「<a onclick="showPage('case')">案件管理</a>」录入案号、客户、代理费、结案月份等。状态流转支持 16 态（待接洽→咨询→签约→一审→执行→结案等）。</li>
+            <li><b>判断提成是否可结算</b>：在「<a onclick="showPage('case')">案件管理</a>」工具栏点击「<b>判断提成是否可结算</b>」，系统按规则回填可结算月份；满足条件的案件在列表中以<span class="tag ready">可结算</span>绿色高亮。</li>
+            <li><b>批量生成薪酬结算单（Word）</b>：在下方「<b>① 一键生成结算文档</b>」勾选可结算案件（绿色行已默认勾选），可选择结算模板，点击「<b>一键生成结算文档</b>」批量下载合并文档（每案一份《（ORG_NAME）案件结案审批表》，内含审批表 + 按成员薪酬结算单）。</li>
+            <li><b>（可选）自定义结算模板</b>：在「<b>② 结算模板管理</b>」新建模板，按 Word 模板<b>四部分结构</b>录入配置——第1部分案件基本信息（8 字段勾选/排序，生成时从案件管理自动带入）；第2部分案件办结情况（费用明细录入：收入填正数、垫付填负数 + 收益/提成自动计算实时预览）；第3部分审批意见（签字位姓名自动带入、日期默认生成日期）；第4部分说明（固定 5 条只读）。生成时切换模板即可生效。</li>
+          </ol>
+          <div class="hint" style="margin-top:10px;color:#b8860b"><b>注意</b>：①结算一旦生成不可撤销，生成前请确认勾选无误；②自定义模板字段修改不影响已生成的 Word 文档；③同一案件同一结算月份重复结算会被拒绝。</div>
+        </div>
+        <div class="card"><h3>① 一键生成结算文档（薪酬结算单 + 案件结案审批表合并）</h3>
+          <div class="hint" style="margin-bottom:12px">勾选案件后点击「一键生成结算文档」：每案输出一份合并文档《（ORG_NAME）案件结案审批表》（审批表内容 + 按成员薪酬结算单内容合并，结算单部分按所选自定义模板渲染），打包 ZIP 下载，文档名称统一为「（ORG_NAME）案件结案审批表」。</div>
+          <div class="form-row" style="grid-template-columns:260px">
+            <div class="form-item"><label>结算模板（合并进审批表文档的结算单部分，留空用默认模板）</label>
+              <select id="settleTplSel"><option value="">默认模板</option></select></div>
+          </div>
+          <div style="overflow-x:auto"><table id="settleCaseTable">
+            <thead><tr><th><input type="checkbox" onclick="toggleAllCases(this)"></th>
+              <th>案号</th><th>客户</th><th>负责人</th><th>代理费</th><th>结算状态</th></tr></thead>
+            <tbody></tbody></table></div>
+          <div style="margin-top:12px">
+            <button class="btn" onclick="checkAllReady()">勾选所有可结算案件</button>
+            <button class="btn primary" onclick="genBundleSettlements()">一键生成结算文档</button></div>
+        </div>
+        <div class="card"><h3>② 结算模板管理（自定义模板）</h3>
+          <div class="hint" style="margin-bottom:10px">按 Word 模板四部分结构录入配置：<b>第1部分</b>案件基本信息（8 字段勾选/排序）；<b>第2部分</b>案件办结情况（费用明细录入 + 收益/提成自动计算实时预览）；<b>第3部分</b>审批意见（姓名自动带入）；<b>第4部分</b>说明（固定只读）。保存后在一键生成时可选择不同模板。</div>
+          <button class="btn primary" id="btnTplNew" onclick="openTplModal()">+ 新建模板</button>
+          <div style="overflow-x:auto;margin-top:12px"><table id="tplTable">
+            <thead><tr><th>模板名称</th><th>默认</th><th>字段数</th><th>更新人</th><th>更新时间</th><th>操作</th></tr></thead>
+            <tbody></tbody></table></div>
+        </div>
+        <div class="card"><h3>历史结算记录</h3>
+          <div class="toolbar">
+            <input id="settleHistoryMonth" type="month" style="width:160px" title="按结算月筛选">
+            <input id="settleHistoryKw" placeholder="搜索案号 / 人员名称" style="width:200px">
+            <button class="btn" onclick="loadSettleHistory()">查询</button>
+            <button class="btn" onclick="resetSettleHistory()">重置</button>
+            <button class="btn primary" onclick="exportSettleHistory()">导出 CSV</button>
+          </div>
+          <div style="overflow-x:auto"><table id="settleTable">
+            <thead><tr><th>批次号</th><th>结算月</th><th>案号</th><th>人员</th><th>金额(¥)</th><th>生成人</th><th>时间</th></tr></thead>
+            <tbody></tbody></table></div></div>
+      </div>
+
+      <!-- 导入导出 -->
+      <div class="page" id="page-file">
+        <div class="card"><h3>数据信息库（综合查阅）</h3>
+          <div class="hint" style="margin-bottom:12px">统一查阅数据库中的全部数据：案件、人员花名册、客户、发票、财务结算信息。支持按类别切换与关键字检索。</div>
+          <div class="toolbar">
+            <select id="libType" onchange="loadDataLibrary()" style="width:180px">
+              <option value="case">案件信息</option>
+              <option value="staff">人员花名册</option>
+              <option value="customer">客户信息</option>
+              <option value="invoice">发票信息</option>
+              <option value="finance">财务结算信息</option>
+            </select>
+            <input id="libKw" placeholder="搜索关键词" onkeydown="if(event.key==='Enter')loadDataLibrary()">
+            <button class="btn" onclick="loadDataLibrary()">查询</button>
+          </div>
+          <div style="overflow-x:auto"><table id="libTable">
+            <thead id="libHead"></thead><tbody></tbody></table></div>
+        </div>
+        <div class="card"><h3>导入模板管理（字段映射复用 / 生成提成表）</h3>
+          <div class="hint" style="margin-bottom:10px">为不同来源的表格自定义「文件列名 → 系统字段」映射并保存，后续重复导入直接选用；映射模板亦可复用于生成提成表。</div>
+          <button class="btn primary" onclick="openImportTplModal()">+ 新建导入模板</button>
+          <div style="overflow-x:auto;margin-top:12px"><table id="impTplTable">
+            <thead><tr><th>模板名称</th><th>目标实体</th><th>字段映射</th><th>创建人</th><th>操作</th></tr></thead>
+            <tbody></tbody></table></div>
+        </div>
+        <div class="card"><h3>批量录入（案件 / 花名册 / 客户）</h3>
+          <div class="hint" style="margin-bottom:12px">上传 Excel / CSV，按字段映射（可选用导入模板）自动匹配至数据库，支持合并单元格内容自动填充；导入时自动清洗、校验并去重。人员花名册与客户信息可在对应页面批量导入。</div>
+          <div class="form-row" style="grid-template-columns:280px">
+            <div class="form-item"><label>导入模板（可选）</label>
+              <select id="caseImportTpl"><option value="">自动匹配表头</option></select></div>
+          </div>
+          <input type="file" id="importFile" accept=".xlsx,.xls,.csv" style="width:auto">
+          <button class="btn primary" onclick="importCases()">导入案件</button>
+          <button class="btn" onclick="exportCases()">导出案件台账</button>
+          <div id="importResult" style="margin-top:14px"></div>
+        </div>
+      </div>
+
+      <!-- 发票识别 -->
+      <div class="page" id="page-invoice">
+        <div class="card"><h3>本地离线 OCR 发票识别（推荐）</h3>
+          <div class="hint" style="margin-bottom:12px">完全本地离线识别，数据不出本机。支持图片（JPG/PNG/BMP）与 PDF（文本型电子发票经 pdfplumber 精确提取，扫描件自动转图逐页识别），自动识别发票类型（专票/普票）、发票号码、购买方（客户名称）、项目名称（归集为费用科目）、金额、税额、开票日期，金额经误识别修正；销售方默认记「ORG_NAME」，识别不一致将标记待人工核对。</div>
+          <div id="ocrStatus" style="margin-bottom:12px"></div>
+          <div class="form-row" style="grid-template-columns:280px">
+            <div class="form-item"><label>案件号（可选，登记到台账）</label><input id="ocrCaseNo" placeholder="如 001"></div>
+          </div>
+          <input type="file" id="ocrFile" accept=".jpg,.jpeg,.png,.bmp,.pdf" style="width:auto">
+          <button class="btn primary" id="btnOcr" onclick="ocrRecognize()">本地 OCR 识别</button>
+          <div id="ocrResult" style="margin-top:14px"></div>
+        </div>
+        <div class="card"><h3>AI 电子发票识别（云端，可选）</h3>
+          <div class="hint" style="margin-bottom:12px">上传发票图片，调用已配置的多模态 AI 识别并归集费用科目。支持火山引擎（豆包）、阿里百炼（通义千问）、腾讯云（混元）、兼容 OpenAI 四类云服务；密钥从环境变量或本地配置文件读取，不入库明文。</div>
+          <div class="form-row" style="grid-template-columns:320px">
+            <div class="form-item"><label>AI 服务商</label>
+              <select id="aiProvider" onchange="loadAiProtocol()"></select></div>
+          </div>
+          <div id="aiProtocol" class="proto-box"></div>
+          <input type="file" id="invoiceFile" accept=".jpg,.jpeg,.png" style="width:auto">
+          <button class="btn primary" id="btnAi" onclick="aiRecognize()">AI 识别</button>
+          <div id="aiResult" style="margin-top:14px"></div>
+        </div>
+        <div class="card"><h3>发票批量导入（多文件，推荐）</h3>
+          <div class="hint" style="margin-bottom:12px">一次选择多张发票（图片 JPG/PNG/BMP 与 PDF 可混传），逐张自动识别并登记台账。文本型电子发票 PDF 经 pdfplumber 精确提取文本层，扫描件自动转图 OCR；识别失败或缺字段的发票会逐张提示原因，不会中断整批。识别要素：发票类型（专票/普票）、购买方（客户名称）、项目名称、价税合计、税额、开票日期。</div>
+          <div class="form-row" style="grid-template-columns:220px 1fr">
+            <div class="form-item"><label>公共案件号（可选，统一登记）</label><input id="batchCaseNo" placeholder="如 #260901"></div>
+          </div>
+          <input type="file" id="batchInvFiles" accept=".jpg,.jpeg,.png,.bmp,.pdf" multiple style="width:auto">
+          <button class="btn primary" id="btnBatchInv" onclick="batchInvImport()">批量导入识别</button>
+          <div id="batchInvResult" style="margin-top:14px"></div>
+        </div>
+        <div class="card"><h3>发票台账（全部内容可编辑）</h3>
+          <div class="toolbar" style="flex-wrap:wrap">
+            <input id="invoiceKw" placeholder="关键字：发票号 / 科目"
+              onkeydown="if(event.key==='Enter')loadInvoices()">
+            <input id="invCaseNo" placeholder="按案件号筛选" style="width:150px"
+              onkeydown="if(event.key==='Enter')loadInvoices()">
+            <input id="invBuyer" placeholder="按购买方筛选" style="width:160px"
+              onkeydown="if(event.key==='Enter')loadInvoices()">
+            <button class="btn" onclick="loadInvoices()">查询</button>
+            <button class="btn" onclick="loadInvoiceCompare()">开票金额比对</button>
+            <button class="btn primary" onclick="openInvModal()">+ 新增发票</button>
+          </div>
+          <div id="invoiceCompareBox" style="margin-bottom:12px"></div>
+          <div style="overflow-x:auto"><table id="invoiceTable">
+            <thead><tr><th>案件号</th><th>发票号码</th><th>类型</th><th>购买方（客户名称）</th><th>项目名称</th><th>销售方</th><th>价税合计(¥)</th><th>税额(¥)</th><th>税率</th>
+              <th>费用科目</th><th>开票日期</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody></tbody></table></div></div>
+      </div>
+
+      <!-- 人员花名册 -->
+      <div class="page" id="page-staff">
+        <div class="card"><h3>新增人员</h3>
+          <div class="form-row">
+            <div class="form-item"><label>工号</label><input id="stNo"></div>
+            <div class="form-item"><label>姓名 *</label><input id="stName"></div>
+            <div class="form-item"><label>部门</label><input id="stDept"></div>
+            <div class="form-item"><label>岗位</label><input id="stPos"></div>
+            <div class="form-item"><label>入职日期</label><input id="stHire" type="date"></div>
+            <div class="form-item"><label>联系电话</label><input id="stPhone"></div>
+            <div class="form-item"><label>身份证号</label><input id="stIdcard"></div>
+            <div class="form-item"><label>在职状态</label><select id="stStatus">
+              <option>在职</option><option>离职</option><option>停薪留职</option></select></div>
+            <div class="form-item"><label>案件提成率（如 0.08 表示 8%）</label><input id="stRate" type="number" step="0.01" placeholder="0.08"></div>
+          </div>
+          <div class="form-item"><label>备注</label><input id="stRemark"></div>
+          <button class="btn primary" id="btnStaffSave" onclick="saveStaff()">保存人员</button>
+        </div>
+        <div class="card"><h3>按部门批量设置提成率</h3>
+          <div class="hint" style="margin-bottom:10px">为同一部门的所有在职人员批量设置相同的案件提成率（提成率将被薪酬计算模块自动引用，可随时手动修改）。</div>
+          <div class="form-row" style="grid-template-columns:220px 180px auto">
+            <div class="form-item"><label>部门</label><input id="batchRateDept" placeholder="如：业务部"></div>
+            <div class="form-item"><label>提成率</label><input id="batchRateVal" type="number" step="0.01" placeholder="0.08"></div>
+            <div class="form-item" style="align-self:end"><button class="btn primary" onclick="batchSetRate()">批量设置</button></div>
+          </div>
+        </div>
+        <div class="card"><h3>批量导入（Excel / CSV）</h3>
+          <div class="hint" style="margin-bottom:12px">支持手动录入或批量导入。导入自动校验姓名必填、日期/数字格式，重复（姓名+工号）自动跳过并提示错误明细。</div>
+          <div class="form-row" style="grid-template-columns:280px">
+            <div class="form-item"><label>导入模板（可选）</label>
+              <select id="staffImportTpl"><option value="">自动匹配表头</option></select></div>
+          </div>
+          <input type="file" id="staffImportFile" accept=".xlsx,.xls,.csv" style="width:auto">
+          <button class="btn primary" onclick="importStaff()">开始导入</button>
+          <div id="staffImportResult" style="margin-top:14px"></div>
+        </div>
+        <div class="card"><h3>人员花名册</h3>
+          <div class="toolbar"><input id="staffKw" placeholder="搜索姓名 / 工号 / 部门 / 岗位"
+            onkeydown="if(event.key==='Enter')loadStaff()">
+            <button class="btn" onclick="loadStaff()">查询</button></div>
+          <div style="overflow-x:auto"><table id="staffTable">
+            <thead><tr><th>工号</th><th>姓名</th><th>部门</th><th>岗位</th><th>入职日期</th>
+              <th>联系电话</th><th>提成率</th><th>状态</th><th>操作</th></tr></thead>
+            <tbody></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- 客户信息 -->
+      <div class="page" id="page-customer">
+        <div class="card"><h3>新增客户</h3>
+          <div class="form-row">
+            <div class="form-item"><label>客户名称 *</label><input id="cuName"></div>
+            <div class="form-item"><label>统一社会信用代码</label><input id="cuCredit"></div>
+            <div class="form-item"><label>联系人</label><input id="cuContact"></div>
+            <div class="form-item"><label>联系电话</label><input id="cuPhone"></div>
+            <div class="form-item"><label>客户类型</label><select id="cuType">
+              <option>企业</option><option>个人</option><option>政府/事业单位</option><option>其他</option></select></div>
+            <div class="form-item"><label>所属行业</label><input id="cuIndustry"></div>
+            <div class="form-item"><label>地址</label><input id="cuAddr"></div>
+          </div>
+          <div class="form-item"><label>备注</label><input id="cuRemark"></div>
+          <button class="btn primary" id="btnCustSave" onclick="saveCustomer()">保存客户</button>
+        </div>
+        <div class="card"><h3>批量导入（Excel / CSV）</h3>
+          <div class="hint" style="margin-bottom:12px">支持手动录入或批量导入。导入自动校验客户名称必填、格式与完整性，重复（客户名称）自动跳过并提示错误明细。</div>
+          <div class="form-row" style="grid-template-columns:280px">
+            <div class="form-item"><label>导入模板（可选）</label>
+              <select id="customerImportTpl"><option value="">自动匹配表头</option></select></div>
+          </div>
+          <input type="file" id="customerImportFile" accept=".xlsx,.xls,.csv" style="width:auto">
+          <button class="btn primary" onclick="importCustomers()">开始导入</button>
+          <div id="customerImportResult" style="margin-top:14px"></div>
+        </div>
+        <div class="card"><h3>客户信息列表</h3>
+          <div class="toolbar"><input id="customerKw" placeholder="搜索客户名称 / 联系人 / 电话 / 信用代码"
+            onkeydown="if(event.key==='Enter')loadCustomers()">
+            <button class="btn" onclick="loadCustomers()">查询</button></div>
+          <div style="overflow-x:auto"><table id="customerTable">
+            <thead><tr><th>客户名称</th><th>信用代码</th><th>联系人</th><th>联系电话</th>
+              <th>类型</th><th>行业</th><th>操作</th></tr></thead>
+            <tbody></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- 用户权限 -->
+      <div class="page" id="page-user">
+        <div class="card"><h3>用户与权限管理</h3>
+          <div class="form-row">
+            <div class="form-item"><label>用户名</label><input id="nuName"></div>
+            <div class="form-item"><label>姓名</label><input id="nuDisplay"></div>
+            <div class="form-item"><label>初始密码</label><input id="nuPwd" placeholder="默认 123456"></div>
+            <div class="form-item"><label>角色</label><select id="nuRole" onchange="onNuRoleChange()"></select></div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <button class="btn" id="nuPermBtn" onclick="openUserPermModal(null)"
+              title="为新建用户单独分配权限（可选，留空则继承角色默认）">权限配置</button>
+            <button class="btn primary" onclick="addUser()">新建用户</button>
+            <span id="nuPermSummary" class="hint"></span>
+          </div>
+          <div style="overflow-x:auto;margin-top:14px"><table id="userTable">
+            <thead><tr><th>用户名</th><th>姓名</th><th>角色</th><th>状态</th><th>创建时间</th><th>操作</th></tr></thead>
+            <tbody></tbody></table></div>
+          <div class="hint" style="margin-top:12px" id="roleDesc"></div>
+        </div>
+      </div>
+
+      <!-- 操作日志 -->
+      <div class="page" id="page-log">
+        <div class="card"><h3>操作日志（可追溯审计）</h3>
+          <div class="toolbar"><input id="logKw" placeholder="搜索操作人 / 动作 / 对象"
+            onkeydown="if(event.key==='Enter')loadLogs()">
+            <button class="btn" onclick="loadLogs()">查询</button></div>
+          <div style="overflow-x:auto"><table id="logTable">
+            <thead><tr><th>时间</th><th>操作人</th><th>动作</th><th>对象类型</th><th>对象</th><th>详情</th><th>IP</th></tr></thead>
+            <tbody></tbody></table></div>
+        </div>
+      </div>
+
+      <!-- 系统设置 -->
+      <div class="page" id="page-setting">
+        <div class="card"><h3>系统设置</h3>
+          <div class="form-row">
+            <div class="form-item"><label>律师事务所机构名称/律师名称</label><input id="setFirm"></div>
+            <div class="form-item"><label>局域网配网数字（6位，客户端凭此数字自动连接）</label><input id="setPair" maxlength="6"></div>
+            <div class="form-item"><label>案号起始序号（当前年月首次生成时生效，支持调整；格式 #年两位月两位+序号）</label><input id="setCaseNoSeqStart" placeholder="1" style="width:120px"></div>
+            <div class="form-item"><label>结算单模板文件名（置于 data/templates/，留空用内置模板）</label><input id="setTpl"></div>
+            <div class="form-item"><label>案件类型选项（顿号/逗号分隔，用于案件弹窗下拉）</label><input id="setCaseTypes" placeholder="婚姻家庭纠纷，继承纠纷，合同纠纷…"></div>
+          </div>
+          <div class="form-row" style="margin-top:8px">
+            <div class="form-item" style="flex:1"><label>案件类型「板块」二级选项（选择类型后编辑其板块，逗号分隔；建设工程/买卖合同纠纷已预置固定项，所有类型均支持自定义录入）</label>
+              <div style="display:flex;gap:8px;align-items:flex-end">
+                <select id="setSectionTypeSel" onchange="loadSectionList()" style="min-width:220px"></select>
+                <input id="setSectionList" placeholder="木方，钢材，钢模，…" style="flex:1">
+                <button class="btn" onclick="saveCaseTypeSections()">保存该类型板块</button>
+              </div>
+            </div>
+          </div>
+          <h3 style="margin-top:10px">AI 接口配置（发票识别 · 多云服务商）</h3>
+          <div class="hint">密钥仅保存在本地配置文件（<code>data/ai_providers.json</code>，权限 600）或环境变量，绝不写入数据库明文。各服务商接口协议见下方说明。</div>
+          <div id="aiProvidersBox" class="ai-providers"></div>
+          <div id="aiProtocolsBox" class="ai-protocols"></div>
+          <button class="btn primary" onclick="saveAiProviders()">保存 AI 服务商配置</button>
+          <div class="form-row" style="margin-top:10px">
+            <div class="form-item"><label>费用科目列表（JSON 数组，作用于发票识别分类提示与结算单）</label><input id="setCats"></div>
+          </div>
+          <button class="btn primary" onclick="saveSettings()">保存设置</button>
+        </div>
+
+        <!-- 角色权限管理（机构负责人 / 律师 等） -->
+        <div class="card" style="margin-top:12px">
+          <h3>人员角色权限管理</h3>
+          <div class="hint" style="margin-bottom:10px">
+            在此配置各角色（财务经理、财务专员、案件专员、查看人员、<b>机构负责人</b>、<b>律师</b>）可执行的权限。勾选即表示该角色拥有对应权限。
+            系统内置默认权限为「机构负责人=机构全局管理+审批权限」「律师=案件基本信息录入与维护」，可按需调整后保存生效。
+            <br>配置文件：<code id="roleConfigPath">data/role_config.json</code>
+          </div>
+          <div style="overflow-x:auto"><table id="rolePermTable">
+            <thead id="rolePermHead"></thead>
+            <tbody id="rolePermBody"></tbody>
+          </table></div>
+          <div style="margin-top:12px;display:flex;gap:8px;flex-wrap:wrap">
+            <button class="btn" onclick="confirmRoleConfig()">确认信息</button>
+            <button class="btn primary" onclick="saveRoleConfig()">保存设置</button>
+            <button class="btn" onclick="loadRoleConfig()">重置为当前已保存</button>
+          </div>
+          <div id="roleConfigSummary" class="hint" style="margin-top:10px"></div>
+        </div>
+
+        <!-- 数据自动备份 -->
+        <div class="card" style="margin-top:12px">
+          <h3>数据自动备份</h3>
+          <div class="hint" style="margin-bottom:10px">
+            备份内容打包为单个 ZIP（含 <code>manifest.json</code> 清单）：①数据库（在线快照，无需停机）②上传文件（发票图片/PDF）③结算模板 ④配置文件（AI 服务商）。
+            备份路径建议设置为其他磁盘或移动硬盘，避免与系统同盘损坏；自动清理按「保留份数」执行，备份失败会记录可读错误提示。
+          </div>
+          <div class="form-row" style="flex-wrap:wrap">
+            <div class="form-item">
+              <label>启用自动备份</label>
+              <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+                <input type="checkbox" id="bkEnabled" style="width:auto"> 启用</label>
+            </div>
+            <div class="form-item" style="flex:1"><label>备份路径（留空 = 默认 data/backups）</label><input id="bkPath" placeholder="如 D:\ORG_NAME备份"></div>
+            <div class="form-item"><label>执行周期</label>
+              <select id="bkSchedule" onchange="renderBkSchedule()">
+                <option value="daily">每日</option>
+                <option value="weekly">每周</option>
+                <option value="interval">按间隔（小时）</option>
+                <option value="manual">仅手动</option>
+              </select></div>
+            <div class="form-item" id="bkTimeBox"><label>触发时间</label><input id="bkTime" type="time" value="23:00"></div>
+            <div class="form-item" id="bkWeekdayBox" style="display:none"><label>每周几</label>
+              <select id="bkWeekday">
+                <option value="0">周一</option><option value="1">周二</option><option value="2">周三</option>
+                <option value="3">周四</option><option value="4">周五</option><option value="5" selected>周六</option>
+                <option value="6">周日</option>
+              </select></div>
+            <div class="form-item" id="bkIntervalBox" style="display:none"><label>间隔（小时）</label><input id="bkInterval" type="number" min="1" step="1" value="24" style="width:90px"></div>
+            <div class="form-item"><label>保留份数（0=不清理）</label><input id="bkKeep" type="number" min="0" value="10" style="width:90px"></div>
+          </div>
+          <div class="form-row" style="flex-wrap:wrap;align-items:center;gap:14px;margin-top:2px">
+            <label style="font-size:13px;color:var(--kd-sub)">备份范围：</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="bkScopeDb" checked style="width:auto"> 数据库</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="bkScopeUploads" checked style="width:auto"> 上传文件</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="bkScopeTpl" checked style="width:auto"> 结算模板</label>
+            <label style="display:flex;align-items:center;gap:4px;font-size:13px"><input type="checkbox" id="bkScopeCfg" checked style="width:auto"> 配置文件</label>
+          </div>
+          <div class="form-row" style="margin-top:10px;align-items:center">
+            <button class="btn" onclick="saveBackupConfig()">保存备份配置</button>
+            <button class="btn primary" id="bkRunBtn" onclick="runBackupNow()">立即备份</button>
+            <button class="btn" onclick="cleanupBackups()">清理过期备份</button>
+            <span id="bkState" style="margin-left:10px;font-size:12px;color:var(--kd-sub)"></span>
+          </div>
+          <div id="bkProgressBox" style="display:none;margin-top:10px">
+            <div style="background:#eef2f8;border-radius:4px;height:14px;overflow:hidden">
+              <div id="bkProgressBar" style="width:0%;height:100%;background:var(--kd-blue,#2f6bff);transition:width .4s"></div>
+            </div>
+            <div id="bkProgressText" class="hint" style="margin-top:4px"></div>
+          </div>
+          <h4 style="margin:14px 0 6px">备份文件列表</h4>
+          <div style="overflow-x:auto"><table id="bkTable">
+            <thead><tr><th>备份文件</th><th>大小</th><th>创建时间</th><th>操作</th></tr></thead>
+            <tbody></tbody></table></div>
+          <h4 style="margin:14px 0 6px">备份日志（最近 200 行）</h4>
+          <pre id="bkLog" style="background:#f7f9fc;border:1px solid #e6ebf2;border-radius:4px;padding:10px;font-size:12px;line-height:1.6;max-height:220px;overflow:auto;white-space:pre-wrap"></pre>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- 案件编辑弹窗 -->
+<div class="modal-mask" id="caseMask"><div class="modal">
+  <h3 id="caseModalTitle">新建案件</h3>
+  <input type="hidden" id="cId"><input type="hidden" id="cVersion">
+  <div class="mod-tabs">
+    <div class="mod-tab active" data-mod="proj" onclick="switchCaseMod('proj')">项目信息</div>
+    <div class="mod-tab" data-mod="member" onclick="switchCaseMod('member')">项目组成员</div>
+    <div class="mod-tab" data-mod="fin" onclick="switchCaseMod('fin')">财务信息</div>
+  </div>
+
+  <!-- 模块一：项目信息 -->
+  <div class="mod-pane active" id="modPaneProj">
+    <div class="form-row">
+      <div class="form-item"><label>案号（留空自动生成，也可手动录入）</label><input id="cNo" placeholder="留空自动生成"></div>
+      <div class="form-item"><label>客户名称 *</label><input id="cClient"></div>
+      <div class="form-item"><label>案件类型</label><select id="cType"><option value="">— 请选择 —</option></select></div>
+      <div class="form-item"><label>板块（二级明细，可自定义录入）</label>
+        <input id="cSection" list="sectionList" placeholder="选择或输入板块"></div>
+      <datalist id="sectionList"></datalist>
+      <div class="form-item"><label>案由</label><input id="cCause"></div>
+      <div class="form-item"><label>项目</label><input id="cProject"></div>
+      <div class="form-item"><label>状态</label><select id="cStatus"><option value="">— 请选择状态 —</option></select>
+        <span class="hint" style="font-size:12px;margin-left:6px">共 16 个流转状态（待接洽 → 咨询评估中 → 已签约待收案 → 一审中 → 执行中 → 已结案等）</span></div>
+        <div class="form-item"><label>原告</label><input id="cPlaintiff"></div>
+      <div class="form-item"><label>被告</label><input id="cDefendant"></div>
+      <div class="form-item"><label>收费标准</label>
+        <div style="display:flex;align-items:center">
+          <input id="cFeeStandard" style="flex:1">
+          <span class="hint" style="white-space:nowrap;margin-left:6px">人民币元</span>
+        </div></div>
+    </div>
+    <div class="mod-title">项目组成员（自动同步，无需手工填写）</div>
+    <div class="form-row">
+      <div class="form-item"><label>维护人</label><input id="cMaintain" disabled placeholder="在项目组成员模块添加"></div>
+      <div class="form-item"><label>主承办人</label><input id="cOwner" disabled placeholder="在项目组成员模块添加"></div>
+    </div>
+    <div class="mod-title">档案管理</div>
+    <div class="form-row">
+      <div class="form-item"><label>档案是否已归档</label><select id="cArchive">
+        <option>未归档</option><option>已归档</option></select></div>
+      <div class="form-item"><label>原件调档借阅情况</label><input id="cBorrow"></div>
+      <div class="form-item"><label>借阅人</label><input id="cBorrowUser"></div>
+      <div class="form-item"><label>借阅时间</label><input id="cBorrowTime" type="date"></div>
+      <div class="form-item"><label>预计归还时间</label><input id="cBorrowReturn" type="date"></div>
+    </div>
+    <div class="form-item"><label>备注</label><textarea id="cRemark" rows="2"></textarea></div>
+  </div>
+
+  <!-- 模块二：项目组成员 -->
+  <div class="mod-pane" id="modPaneMember">
+    <div class="hint" style="margin-bottom:10px">人员信息统一在此维护（最多 10 人）：维护人、主承办人、协办人。维护人与主承办人会自动回填至「项目信息」模块，无需重复填写。提成比例默认按花名册引入；保底金额默认「维护人 0 元、其他成员 600 元」，均可手动修改。<br><span class="hint">文本框宽度会根据浏览器/窗口大小自适应调整；下方预览区会随输入实时显示计算结果。</span></div>
+    <div class="member-row">
+      <input id="cmName" class="member-name" placeholder="成员姓名" autocomplete="off">
+      <select id="cmRoleSel">
+        <option value="maintainer">维护人</option>
+        <option value="owner">主承办人</option>
+        <option value="assistant">协办人</option>
+      </select>
+      <button class="btn sm primary" onclick="addCaseMember()">添加</button>
+      <div class="member-amounts">
+        <input id="cmRate" type="number" step="0.1" placeholder="提成率 %" oninput="updateMemberPreview()">
+        <input id="cmGua" type="number" step="1" placeholder="保底金额" oninput="updateMemberPreview()">
+        <input id="cmFixed" type="number" step="1" placeholder="固定金额" oninput="updateMemberPreview()">
+      </div>
+    </div>
+    <div id="memberPreview" class="member-preview">填写提成率后，预览将显示：<b>max(项目回款 × 比例, 保底) + 固定</b> = <span class="money">¥ 0</span></div>
+    <div id="caseMemberList" style="margin-top:10px"></div>
+  </div>
+
+  <!-- 模块三：财务信息 -->
+  <div class="mod-pane" id="modPaneFin">
+    <div class="mod-title">金额信息</div>
+    <div class="form-row">
+      <div class="form-item"><label>标的（¥）</label><input id="cSubject" type="number" step="0.01"></div>
+      <div class="form-item"><label>预期收益（¥）</label><input id="cExpected" type="number" step="0.01"></div>
+      <div class="form-item"><label>代理费金额（¥）</label><input id="cAgentFee" type="number" step="0.01" oninput="updateMemberPreview()"></div>
+      <div class="form-item"><label>代垫诉讼费（¥）</label><input id="cCourtFee" type="number" step="0.01" oninput="updateMemberPreview()"></div>
+      <div class="form-item"><label>财务开票金额（¥）</label><input id="cInvoice" type="number" step="0.01" oninput="updateMemberPreview()"></div>
+      <div class="form-item"><label>财务确认回款金额（¥）</label><input id="cConfirmed" type="number" step="0.01"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-item" style="flex:1"><label>预计收益金额（文本说明，如：按标的 8% 预估约 12 万元）</label><input id="cExpectedText" placeholder="填写预计收益的文字说明"></div>
+    </div>
+    <div class="form-row">
+      <div class="form-item" style="flex:1"><label>备注内容</label><textarea id="cFinanceRemark" rows="2" placeholder="财务备注内容"></textarea></div>
+    </div>
+    <div class="mod-title">费用收回</div>
+    <div class="hint" id="recFinHint">保存案件后，可在此录入费用收回明细（收入填正数、垫付填负数）；也可在「薪酬计算 → （ORG_NAME）案件结案审批表」中录入。</div>
+    <div id="recFinEditor" style="display:none">
+      <div class="form-row">
+        <div class="form-item"><label>回款/垫付日期</label><input id="recFinDate" type="date"></div>
+        <div class="form-item"><label>款项说明</label><input id="recFinItem" placeholder="如：垫付担保费 / 代理费"></div>
+        <div class="form-item"><label>金额（收入正数，垫付负数）</label><input id="recFinAmount" type="number" step="0.01" placeholder="0.00"></div>
+      </div>
+      <button class="btn" onclick="addRecoveryFin()">+ 添加费用收回</button>
+      <div style="overflow-x:auto;margin-top:10px"><table id="recFinTable">
+        <thead><tr><th>日期</th><th>款项说明</th><th>金额(¥)</th><th>操作</th></tr></thead>
+        <tbody></tbody></table></div>
+    </div>
+    <div class="mod-title">结算月份</div>
+    <div class="form-row">
+      <div class="form-item"><label>财务回款月</label><input id="cRecoverMonth" type="month"></div>
+      <div class="form-item"><label>提成结算月</label><input id="cSettleMonth" type="month"></div>
+    </div>
+  </div>
+  <div class="foot"><button class="btn" onclick="closeModal('caseMask')">取消</button>
+    <button class="btn primary" onclick="saveCase()">保存</button></div>
+</div></div>
+
+<!-- 调整薪酬弹窗 -->
+<div class="modal-mask" id="adjMask"><div class="modal" style="width:400px">
+  <h3>手动调整薪酬</h3>
+  <div class="hint" id="adjInfo" style="margin-bottom:14px"></div>
+  <div class="form-item" style="margin-bottom:10px">
+    <label>调整金额（¥）</label>
+    <input id="adjAmount" type="number" step="0.01" min="0" placeholder="留空则恢复自动计算">
+  </div>
+  <div class="hint">留空并点击"恢复自动"可撤销手动调整，由系统按公式重新计算。</div>
+  <div class="foot">
+    <button class="btn" onclick="closeModal('adjMask')">取消</button>
+    <button class="btn" onclick="submitAdjust(true)">恢复自动</button>
+    <button class="btn primary" onclick="submitAdjust(false)">确定调整</button>
+  </div>
+</div></div>
+
+<!-- 修改密码弹窗 -->
+<div class="modal-mask" id="pwdMask"><div class="modal" style="width:380px">
+  <h3>修改密码</h3>
+  <div class="form-item" style="margin-bottom:12px"><label>原密码</label><input id="pwOld" type="password"></div>
+  <div class="form-item" style="margin-bottom:12px"><label>新密码（至少6位）</label><input id="pwNew" type="password"></div>
+  <div class="foot"><button class="btn" onclick="closeModal('pwdMask')">取消</button>
+    <button class="btn primary" onclick="savePwd()">确定</button></div>
+</div></div>
+
+<!-- 用户权限配置弹窗 -->
+<div class="modal-mask" id="permMask"><div class="modal" style="width:620px;max-width:94vw;max-height:88vh;overflow-y:auto">
+  <h3>权限配置 <span id="permModalSub" class="hint" style="font-weight:normal;margin-left:6px"></span></h3>
+  <div class="hint" style="margin-bottom:12px">勾选为该用户分配的具体权限；全部留空则<b>继承所选角色的默认权限</b>。修改角色后请重新打开本窗口以刷新默认值。</div>
+  <div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:13px">
+    <thead><tr style="background:#f5f7fa">
+      <th style="text-align:left;padding:8px 10px;border-bottom:1px solid var(--kd-border)">权限</th>
+      <th style="text-align:center;padding:8px 10px;border-bottom:1px solid var(--kd-border);width:80px">授予</th>
+    </tr></thead>
+    <tbody id="userPermBody"></tbody>
+  </table></div>
+  <div class="foot">
+    <button class="btn" onclick="closeModal('permMask')">取消</button>
+    <button class="btn primary" onclick="confirmUserPerm()">确定</button>
+  </div>
+</div></div>
+
+<!-- 结算模板设计器弹窗（四部分结构） -->
+<div class="modal-mask" id="tplMask"><div class="modal" style="width:980px;max-height:92vh;overflow-y:auto">
+  <h3 id="tplModalTitle">新建结算模板（（ORG_NAME）案件结案审批表）</h3>
+  <input type="hidden" id="tplId">
+  <div class="form-row" style="grid-template-columns:1fr 1fr">
+    <div class="form-item"><label>模板名称 *</label><input id="tplName" placeholder="如：标准审批表模板"></div>
+    <div class="form-item"><label>标题</label><input id="tplTitle" placeholder="（ORG_NAME）案件结案审批表"></div>
+  </div>
+  <div style="display:flex;flex-direction:column;gap:10px">
+    <fieldset style="border:1px solid var(--kd-border);border-radius:6px;padding:10px 12px">
+      <legend style="padding:0 6px;font-weight:bold">一、案件基本信息（勾选显示 + 排序，生成时从案件管理自动带入）</legend>
+      <div id="tplPart1Fields" style="display:flex;flex-wrap:wrap;gap:6px"></div>
+    </fieldset>
+    <fieldset style="border:1px solid var(--kd-border);border-radius:6px;padding:10px 12px">
+      <legend style="padding:0 6px;font-weight:bold">二、案件办结情况（费用明细录入，系统自动生成收益/提成，实时预览）</legend>
+      <div class="form-row" style="grid-template-columns:220px 1fr 1fr 1fr">
+        <div class="form-item"><label>选择案件（用于预览明细）</label>
+          <select id="tplPrevCaseSel" onchange="tplLoadFeeRows()"></select></div>
+        <div class="form-item"><label>日期</label><input id="tplFeeDate" type="date"></div>
+        <div class="form-item"><label>款项说明</label><input id="tplFeeItem" placeholder="如：代理费 / 垫付担保费"></div>
+        <div class="form-item"><label>金额（收入正数 / 垫付负数）</label><input id="tplFeeAmount" type="number" step="0.01" placeholder="0.00"></div>
+      </div>
+      <button class="btn" onclick="tplAddFeeRow()">+ 添加费用明细（保存到所选案件）</button>
+      <div style="overflow-x:auto;margin-top:10px"><table id="tplFeeTable">
+        <thead><tr><th>日期</th><th>款项说明</th><th>金额(¥)</th><th>操作</th></tr></thead>
+        <tbody></tbody></table></div>
+      <div class="form-row" style="grid-template-columns:1fr 1fr;margin-top:10px">
+        <div class="form-item"><label>承办人提成比例（%）</label><input id="tplHandlerRate" type="number" step="0.1" value="5" oninput="tplCalcPreview()"></div>
+        <div class="form-item"><label>维护人提成比例（%）</label><input id="tplMaintainerRate" type="number" step="0.1" value="8" oninput="tplCalcPreview()"></div>
+      </div>
+      <div id="tplProfitBox" style="margin-top:10px"></div>
+    </fieldset>
+    <fieldset style="border:1px solid var(--kd-border);border-radius:6px;padding:10px 12px">
+      <legend style="padding:0 6px;font-weight:bold">三、审批意见（签字位姓名自动带入，日期默认生成日期）</legend>
+      <div id="tplSignPreview" class="hint" style="line-height:1.9"></div>
+    </fieldset>
+    <fieldset style="border:1px solid var(--kd-border);border-radius:6px;padding:10px 12px">
+      <legend style="padding:0 6px;font-weight:bold">四、说明（固定 5 条，只读）</legend>
+      <ol class="hint" style="margin:6px 0 0 18px;line-height:1.8">
+        <li>本表是案件办结归档的凭证，不入卷；</li>
+        <li>本表由财务人员负责填写报批，交财务部备存；</li>
+        <li>各项费用必须写明回款时间和金额；</li>
+        <li>必须附有收益计算表、代理协议、诉讼费用票据、文书（调解书、和解协议、撤诉裁定）、结算说明、收据发票；</li>
+        <li>此表是诉讼部和市场部计算提成的唯一依据。</li>
+      </ol>
+    </fieldset>
+    <fieldset style="border:1px solid var(--kd-border);border-radius:6px;padding:10px 12px">
+      <legend style="padding:0 6px;font-weight:bold">合并薪酬结算单配置（应用到合并文档的结算单部分）</legend>
+      <div class="form-row" style="grid-template-columns:repeat(3,1fr)">
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="tplShowBatch" style="width:auto" checked>显示批次号</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="tplShowDate" style="width:auto" checked>显示结算日期</label>
+        <label style="display:flex;align-items:center;gap:6px;font-size:13px"><input type="checkbox" id="tplShowUser" style="width:auto">显示结算人员</label>
+      </div>
+      <div class="form-item" style="margin-top:8px"><label>结算单显示字段（勾选，按顺序）</label>
+        <div id="tplSettleCfgFields" style="display:flex;flex-wrap:wrap;gap:6px"></div></div>
+      <div class="form-item" style="margin-top:8px"><label>落款</label><input id="tplFooter" placeholder="财务经理签字：______________    领款人签字：______________"></div>
+    </fieldset>
+  </div>
+  <div class="foot">
+    <button class="btn" onclick="closeModal('tplMask')">取消</button>
+    <button class="btn" onclick="tplPreviewWord()">预览 Word</button>
+    <button class="btn primary" onclick="saveTpl()">保存模板</button>
+  </div>
+</div></div>
+
+<!-- 导入模板弹窗 -->
+<div class="modal-mask" id="impTplMask"><div class="modal" style="width:660px">
+  <h3>新建导入模板</h3>
+  <div class="form-row">
+    <div class="form-item"><label>模板名称 *</label><input id="itName" placeholder="如：某律所月度案件表"></div>
+    <div class="form-item"><label>目标实体</label><select id="itEntity" onchange="itEntityChange()">
+      <option value="case">案件台账</option><option value="staff">人员花名册</option><option value="customer">客户信息</option></select></div>
+  </div>
+  <div class="form-item"><label>字段映射（左侧填文件里的列名，右侧选对应的系统字段）</label>
+    <div id="itMapRows"></div>
+    <button class="btn sm" onclick="itAddRow()">+ 添加映射行</button>
+  </div>
+  <div class="foot"><button class="btn" onclick="closeModal('impTplMask')">取消</button>
+    <button class="btn primary" onclick="saveImportTpl()">保存模板</button></div>
+</div></div>
+
+<!-- 发票新增/编辑弹窗 -->
+<div class="modal-mask" id="invMask"><div class="modal" style="width:640px">
+  <h3 id="invModalTitle">新增发票</h3>
+  <input type="hidden" id="invId">
+  <div class="form-row">
+    <div class="form-item"><label>案件号（可填，登记到对应案件台账）</label><input id="invCaseInput" placeholder="如 #260901"></div>
+    <div class="form-item"><label>发票号码</label><input id="invNo" placeholder="如 24417000000123456789"></div>
+  </div>
+  <!-- 布局规则：左侧购买方、右侧销售方 -->
+  <div class="form-row" style="grid-template-columns:1fr 1fr">
+    <div class="form-item"><label>购买方（客户名称，企业全称）</label><input id="invBuyer" placeholder="发票所载购买方全称"></div>
+    <div class="form-item"><label>销售方</label><input id="invSeller" placeholder="默认 ORG_NAME" disabled></div>
+  </div>
+  <div class="form-row">
+    <div class="form-item"><label>购买方税号</label><input id="invBuyerTax" placeholder="统一社会信用代码/纳税人识别号"></div>
+    <div class="form-item"><label>销售方税号</label><input id="invSellerTax" placeholder="统一社会信用代码/纳税人识别号"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-item"><label>费用科目</label><input id="invCat" placeholder="如 法律咨询 / 差旅费"></div>
+    <div class="form-item"><label>项目名称（发票原样，含*编码*前缀）</label><input id="invItem" placeholder="如 *生产生活服务*法律咨询"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-item"><label>发票类型</label><select id="invType">
+      <option value="">未注明</option>
+      <option>电子发票（增值税专用发票）</option><option>电子发票（增值税普通发票）</option>
+      <option>增值税专用发票</option><option>增值税普通发票</option>
+      <option>专票</option><option>普票</option></select></div>
+    <div class="form-item"><label>开票日期</label><input id="invDate" placeholder="YYYY-MM-DD"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-item"><label>金额(不含税,¥)</label><input id="invAmount" type="number" step="0.01" placeholder="票面合计金额"></div>
+    <div class="form-item"><label>税额(¥)</label><input id="invTax" type="number" step="0.01" placeholder="票面合计税额"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-item"><label>价税合计(¥)</label><input id="invTotal" type="number" step="0.01" placeholder="票面价税合计小写"></div>
+    <div class="form-item"><label>税率/征收率</label><input id="invRate" placeholder="如 6% / 13% / 1% / 免税"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-item"><label>价税合计大写</label><input id="invTotalCn" placeholder="如 伍万贰仟圆整"></div>
+    <div class="form-item"><label>开票人</label><input id="invDrawer" placeholder="票面开票人"></div>
+  </div>
+  <div class="form-row">
+    <div class="form-item" style="grid-column:1/-1"><label>备注</label><input id="invRemark" placeholder="票面备注栏内容"></div>
+  </div>
+  <div class="form-row">
+    <label style="display:flex;align-items:center;gap:6px;font-size:13px">
+      <input type="checkbox" id="invConfirm" style="width:auto"> 已确认</label>
+  </div>
+  <div class="form-item" style="margin-top:6px"><label style="color:#888;font-size:12px">提示：案件号可直接录入；购买方即客户名称，用于按购买方筛选台账；销售方默认记「ORG_NAME」，若识别不一致将标记待人工核对。金额口径与发票规范一致：金额=不含税，价税合计=票面合计。</label></div>
+  <div id="invReviewBox" style="margin-top:4px;display:none"><span class="tag red" id="invReview"></span></div>
+  <div class="foot"><button class="btn" onclick="closeModal('invMask')">取消</button>
+    <button class="btn primary" onclick="saveInv()">保存</button></div>
+</div></div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+/* ================= 工具 ================= */
+var ME=null, PERMS=[];
+function $(id){return document.getElementById(id)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"']/g,function(c){
+  return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function objVals(o){if(!o)return [];if(Array.isArray(o))return o;
+  return Object.keys(o).map(function(k){var v=o[k];if(v&&typeof v==='object'&&v.id==null)v.id=k;return v;})}
+function toast(msg,err){var t=$('toast');t.textContent=msg;t.className='toast'+(err?' err':'');
+  t.style.display='block';setTimeout(function(){t.style.display='none'},2600)}
+/*
+ * 统一请求封装。opt.raw=true 时不做 401 自动跳登录处理（用于登录接口本身），
+ * 由调用方根据 j.ok 与 j.msg 自行提示。所有异常路径都会抛出带 .friendlyMsg 的对象。
+ */
+function api(url,opt){
+  opt=opt||{};
+  var raw=opt.raw;delete opt.raw;
+  opt.headers={'Content-Type':'application/json'};
+  return fetch(url,opt).then(function(r){
+    return r.text().then(function(text){
+      var j;
+      try{j=JSON.parse(text)}catch(e){
+        console.error('API 非 JSON 响应:', url, 'status=', r.status, 'text=', text.slice(0, 200));
+        throw{friendlyMsg:'服务器响应异常（HTTP '+r.status+'），请联系管理员'}
+      }
+      if(r.status===401&&!raw){showLogin();throw{auth:1,friendlyMsg:'登录已过期，请重新登录'}}
+      j._status=r.status;return j;
+    });
+  }).catch(function(e){
+    if(e&&(e.friendlyMsg||e.auth))throw e;
+    // fetch 本身 reject = 网络层失败（服务器未启动/地址错误/断网）
+    throw{friendlyMsg:'网络连接失败：请确认服务器已启动，且通过服务器提供的地址（http://服务器IP:8100）访问，而非直接打开 HTML 文件'};
+  });
+}
+function can(p){return PERMS.indexOf(p)>=0}
+function fmt(n){return (Number(n)||0).toLocaleString('zh-CN',{minimumFractionDigits:2,maximumFractionDigits:2})}
+
+/* ================= 登录 ================= */
+function showLogin(){$('loginView').style.display='flex';$('appView').style.display='none'}
+function showApp(){$('loginView').style.display='none';$('appView').style.display='block'}
+function doLogin(){
+  var username=$('loginUser').value.trim(), password=$('loginPwd').value;
+  var errBox=$('loginErr');
+  function fail(msg){errBox.textContent=msg;errBox.style.display='block';toast(msg,1)}
+  errBox.style.display='none';
+  // 前端预校验：未填直接提示，不发请求
+  if(!username)return fail('请输入用户名');
+  if(!password)return fail('请输入密码');
+  var btn=$('loginBtn');
+  btn.disabled=true;btn.textContent='登录中...';
+  api('/api/login',{method:'POST',raw:true,
+    body:JSON.stringify({username:username,password:password})})
+  .then(function(j){
+    if(!j.ok){fail(j.msg||'登录失败，请重试');return}
+    toast('登录成功，欢迎 '+j.user.name);
+    boot();
+  })
+  .catch(function(e){
+    fail((e&&e.friendlyMsg)||'登录请求失败，请重试');
+  })
+  .finally(function(){btn.disabled=false;btn.textContent='登 录'});
+}
+function doLogout(){api('/api/logout',{method:'POST'}).then(showLogin).catch(showLogin)}
+function boot(){
+  api('/api/me').then(function(j){
+    ME=j.user;PERMS=j.perms;
+    $('curUser').textContent=ME.name;$('curRole').textContent=ME.role_name;
+    $('firmName').textContent=(j.firm||'律师事务所')+' · 工作台';
+    buildSidebar();showPage('home');showApp();
+  });
+}
+api('/api/pair/info').then(function(j){/* 登录页标题固定为「律师工作台」，不再动态覆盖 */});
+api('/api/me').then(function(j){if(j.ok)boot()}).catch(function(){});
+
+/* ================= 导航 ================= */
+var MENUS=[
+  {id:'home',name:'工作台',icon:'M3 13h8V3H3v10zm0 8h8v-6H3v6zm10 0h8V11h-8v10zm0-18v6h8V3h-8z'},
+  {id:'dashboard',name:'运营看板',perm:'case.view',icon:'M3 3v18h18V3H3zm6 14H7v-6h2v6zm4 0h-2V7h2v10zm4 0h-2v-8h2v8z'},
+  {id:'case',name:'案件管理',perm:'case.view',icon:'M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8l-6-6zm4 18H6V4h7v5h5v11z'},
+  {id:'salary',name:'薪酬计算',perm:'salary.view',icon:'M11.8 10.9c-2.27-.59-3-1.2-3-2.15 0-1.09 1.01-1.85 2.7-1.85 1.78 0 2.44.85 2.5 2.1h2.21c-.07-1.72-1.12-3.3-3.21-3.81V3h-3v2.16c-1.94.42-3.5 1.68-3.5 3.61 0 2.31 1.91 3.46 4.7 4.13 2.5.6 3 1.48 3 2.41 0 .69-.49 1.79-2.7 1.79-2.06 0-2.87-.92-2.98-2.1h-2.2c.12 2.19 1.76 3.42 3.68 3.83V21h3v-2.15c1.95-.37 3.5-1.5 3.5-3.55 0-2.84-2.43-3.81-4.7-4.4z'},
+  {id:'settle',name:'结算单',perm:'settle.view',icon:'M19 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V5a2 2 0 0 0-2-2zm-7 14H7v-2h5v2zm5-4H7v-2h10v2zm0-4H7V7h10v2z'},
+  {id:'file',name:'数据信息库',perm:'file.import',icon:'M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z'},
+  {id:'staff',name:'人员花名册',perm:'case.view',icon:'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z'},
+  {id:'customer',name:'客户信息',perm:'case.view',icon:'M12 7V3H2v18h20V7H12zM6 19H4v-2h2v2zm0-4H4v-2h2v2zm0-4H4V9h2v2zm0-4H4V5h2v2zm4 12H8v-2h2v2zm0-4H8v-2h2v2zm0-4H8V9h2v2zm0-4H8V5h2v2zm10 12h-8v-2h2v-2h-2v-2h2v-2h-2V9h8v10zm-2-8h-2v2h2v-2zm0 4h-2v2h2v-2z'},
+  {id:'invoice',name:'发票识别',perm:'invoice.edit',icon:'M21 5H3a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h18a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2zm-9 9H5v2h7v-2zm7-6h-6v2h6V8z'},
+  {id:'user',name:'用户权限',perm:'user.manage',icon:'M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5c0-2.33-4.67-3.5-7-3.5z'},
+  {id:'log',name:'操作日志',perm:'log.view',icon:'M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6a7 7 0 0 1 7-7 7 7 0 0 1 7 7 7 7 0 0 1-7 7 6.99 6.99 0 0 1-4.95-2.05l-1.41 1.41A8.96 8.96 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z'},
+  {id:'setting',name:'系统设置',perm:'setting.manage',icon:'M19.14 12.94a7.07 7.07 0 0 0 0-1.88l2.03-1.58a.5.5 0 0 0 .12-.64l-1.92-3.32a.5.5 0 0 0-.61-.22l-2.39.96a7.05 7.05 0 0 0-1.62-.94l-.36-2.54a.5.5 0 0 0-.5-.42h-3.84a.5.5 0 0 0-.5.42l-.36 2.54c-.59.24-1.13.56-1.62.94l-2.39-.96a.5.5 0 0 0-.61.22L2.65 8.84a.5.5 0 0 0 .12.64l2.03 1.58a7.07 7.07 0 0 0 0 1.88l-2.03 1.58a.5.5 0 0 0-.12.64l1.92 3.32c.14.24.42.34.61.22l2.39-.96c.49.38 1.03.7 1.62.94l.36 2.54c.05.24.25.42.5.42h3.84c.25 0 .45-.18.5-.42l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.19.12.47.02.61-.22l1.92-3.32a.5.5 0 0 0-.12-.64l-2.03-1.58zM12 15.5a3.5 3.5 0 1 1 0-7 3.5 3.5 0 0 1 0 7z'}
+];
+function buildSidebar(){
+  var html='';
+  MENUS.forEach(function(m){
+    if(m.perm&&!can(m.perm))return;
+    html+='<div class="item" data-p="'+m.id+'" onclick="showPage(\''+m.id+'\')">'+
+      '<svg viewBox="0 0 24 24" fill="currentColor"><path d="'+m.icon+'"/></svg><span>'+m.name+'</span></div>';
+  });
+  $('sidebar').innerHTML=html;
+}
+function showPage(id){
+  document.querySelectorAll('.page').forEach(function(p){p.classList.remove('active')});
+  document.querySelectorAll('.sidebar .item').forEach(function(i){
+    i.classList.toggle('active',i.dataset.p===id)});
+  var pg=$('page-'+id);if(!pg)pg=$('page-home'),id='home';
+  pg.classList.add('active');
+  ({home:loadHome,dashboard:loadDashboard,'case':loadCases,salary:loadSalary,settle:loadSettlePage,
+    file:function(){loadImportTplList();loadDataLibrary()},invoice:function(){loadInvoices();loadAiProviderOptions();},user:loadUsers,log:loadLogs,
+    staff:loadStaff,customer:loadCustomers,
+    setting:loadSettings}[id]||function(){})();
+  // 切到涉及案件状态/执行状态的页面时预加载枚举元数据，避免状态列显示原始 code
+  if(id==='dashboard'||id==='case')loadStatusMeta();
+}
+
+/* ================= 工作台 ================= */
+var MODULE_CARDS=[
+  {id:'dashboard',name:'运营看板',desc:'自定义时间段案件统计、回款与合同情况，历史年度对比，项目进度与人员业绩（立项/结项/暂停/进行中、代理费、回款、回款率）',perm:'case.view'},
+  {id:'case',name:'案件管理',desc:'录入维护案件信息，自动生成案号，记录开发人/负责人/代理费/代垫诉讼费/开票金额',perm:'case.view'},
+  {id:'salary',name:'薪酬计算',desc:'按案件成员独立计酬，固定金额在项目组成员中维护',perm:'salary.view'},
+  {id:'settle',name:'结算单生成',desc:'批量生成 Word 薪酬结算单，并生成《案件结案审批表》（含费用收回、收益计算、提成明细）',perm:'settle.view'},
+  {id:'staff',name:'人员花名册',desc:'单位人员信息录入维护，支持 Excel/CSV 批量导入与校验',perm:'case.view'},
+  {id:'customer',name:'客户信息',desc:'客户信息录入维护，支持批量导入与格式校验',perm:'case.view'},
+  {id:'invoice',name:'发票识别',desc:'本地离线 OCR 识别电子发票并自动归集费用科目',perm:'invoice.edit'},
+  {id:'file',name:'数据信息库',desc:'汇总查阅全部数据；导入模板生成提成表；批量录入花名册/客户/案件/财务结算',perm:'file.import'},
+  {id:'user',name:'用户权限',desc:'多角色账号管理与基于角色的权限控制',perm:'user.manage'},
+  {id:'log',name:'操作日志',desc:'增删改查全程可追溯审计',perm:'log.view'}
+];
+function renderFeatureCards(){
+  var h='';
+  MODULE_CARDS.forEach(function(m){
+    if(m.perm&&!can(m.perm))return;
+    var menu=null;MENUS.forEach(function(x){if(x.id===m.id)menu=x});
+    var icon=menu?menu.icon:'';
+    h+='<div class="fc-card" onclick="showPage(\''+m.id+'\')">'+
+      '<div class="fc-top"><div class="fc-ico"><svg viewBox="0 0 24 24" fill="currentColor"><path d="'+icon+'"/></svg></div>'+
+      '<div class="fc-name">'+m.name+'</div></div>'+
+      '<div class="fc-desc">'+m.desc+'</div>'+
+      '<div class="fc-path">入口：侧边栏 → '+m.name+'</div></div>';
+  });
+  $('featureCards').innerHTML=h;
+}
+function loadHome(){
+  renderFeatureCards();
+  api('/api/overview').then(function(j){var d=j.data;
+    $('statGrid').innerHTML=
+      stat('在册案件',d.case_count+' 件')+stat('代理费合计','¥ '+fmt(d.agent_fee_total))+
+      stat('开票金额合计','¥ '+fmt(d.invoice_total))+stat('已生成结算单',d.settle_count+' 份')+
+      stat('待确认发票',d.invoice_pending+' 张');
+    var h='<table><thead><tr><th>案号</th><th>客户</th><th>状态</th><th>更新人</th><th>时间</th></tr></thead><tbody>';
+    d.recent.forEach(function(r){h+='<tr><td>'+esc(r.case_no)+'</td><td>'+esc(r.client_name)+
+      '</td><td><span class="tag '+(r.status==='已结案'?'done':(r.status==='暂停'?'pause':'doing'))+'">'+esc(r.status)+'</span></td><td>'+
+      esc(r.updated_by)+'</td><td>'+esc(r.updated_at)+'</td></tr>'});
+    $('recentCases').innerHTML=d.recent.length?h+'</tbody></table>':'<div class="empty">暂无数据</div>';
+  });
+}
+function stat(l,n){return '<div class="stat"><div class="label">'+l+'</div><div class="num">'+n+'</div></div>'}
+/* ================= 案件面板（可视化） ================= */
+function ringSvg(progress){
+  var r=40, c=2*Math.PI*r, dash=c*progress/100;
+  return '<svg width="110" height="110" viewBox="0 0 110 110">'+
+    '<circle cx="55" cy="55" r="'+r+'" fill="none" stroke="#eef2f8" stroke-width="12"/>'+
+    '<circle cx="55" cy="55" r="'+r+'" fill="none" stroke="#1e6fd9" stroke-width="12" '+
+    'stroke-linecap="round" stroke-dasharray="'+dash+' '+c+'" transform="rotate(-90 55 55)"/>'+
+    '<text x="55" y="61" text-anchor="middle" font-size="22" font-weight="700" fill="#1e6fd9">'+progress+'%</text>'+
+    '</svg>';
+}
+/* ================= 运营看板（独立子页面） ================= */
+function dashPad(n){return (n<10?'0':'')+n}
+function dashFirstDay(y,m){return y+'-'+dashPad(m+1)+'-01'}
+function dashLastDay(y,m){return y+'-'+dashPad(m+1)+'-'+dashPad(new Date(y,m+1,0).getDate())}
+function dashQuick(k){
+  var t=new Date(), y=t.getFullYear(), m=t.getMonth(), s, e;
+  if(k==='month'){s=dashFirstDay(y,m);e=dashLastDay(y,m)}
+  else if(k==='lastmonth'){var mm=m-1,yy=y;if(mm<0){mm=11;yy=y-1}s=dashFirstDay(yy,mm);e=dashLastDay(yy,mm)}
+  else if(k==='quarter'){var q=Math.floor(m/3)*3;s=dashFirstDay(y,q);e=dashLastDay(y,q+2)}
+  else if(k==='year'){s=y+'-01-01';e=y+'-12-31'}
+  else{s='2000-01-01';e='2099-12-31'}
+  $('dashStart').value=s;$('dashEnd').value=e;loadDashboard();
+}
+function dashPct(v){return (v===null||v===undefined)?'<span class="hint">—</span>':v+'%'}
+function dashMoney(v){return '<span class="money">¥ '+fmt(v)+'</span>'}
+function dashTrend(v){
+  if(v===null||v===undefined)return '<span class="hint">—</span>';
+  var c=v>0?'color:var(--kd-red)':(v<0?'color:var(--kd-green)':'color:var(--kd-sub)');
+  var s=v>0?'+':'';
+  return '<span style="'+c+'">'+s+v+'%</span>';
+}
+function dashBar(p){
+  var w=Math.max(0,Math.min(100,p||0));
+  return '<div style="display:flex;align-items:center;gap:6px;min-width:110px">'+
+    '<div class="gantt-bar" style="flex:1"><div class="gantt-fill" style="width:'+w+'%"></div></div>'+
+    '<span style="width:38px;text-align:right">'+w+'%</span></div>';
+}
+function dashTable(cols,rows,emptyText,footRow){
+  if(!rows.length)return '<div class="empty">'+emptyText+'</div>';
+  var h='<div style="overflow-x:auto"><table><thead><tr>';
+  cols.forEach(function(c){h+='<th'+(c.w?' style="width:'+c.w+'"':'')+'>'+c.t+'</th>'});
+  h+='</tr></thead><tbody>';
+  rows.forEach(function(r){h+='<tr>'+r.join('')+'</tr>'});
+  h+='</tbody>';
+  if(footRow)h+='<tfoot><tr>'+footRow.join('')+'</tr></tfoot>';
+  return h+'</table></div>';
+}
+function dashSum(rows,k){var s=0;rows.forEach(function(r){s+=r[k]||0});return s}
+function dashLoadDefaultRange(){
+  if(!$('dashStart').value||!$('dashEnd').value)dashQuick('month');
+}
+function loadDashboard(){
+  dashLoadDefaultRange();
+  var s=$('dashStart').value, e=$('dashEnd').value, dim=$('dashDim').value||'owner';
+  api('/api/dashboard?start='+encodeURIComponent(s)+'&end='+encodeURIComponent(e)+
+      '&dim='+encodeURIComponent(dim)).then(function(j){
+    var d=j.data||{}, u=d.summary||{}, rg=d.range||{};
+    var days=Math.round((new Date(rg.end)-new Date(rg.start))/86400000)+1;
+    $('dashRangeTip').innerHTML='当前区间：<b>'+esc(rg.start)+' ~ '+esc(rg.end)+'</b>'+
+      '（'+days+' 天）· 人员口径：<b>'+esc(rg.dim_label||'')+'</b>'+
+      '<span class="hint">　左侧菜单「运营看板」可随时切换区间与口径</span>';
+
+    /* 顶部指标卡 */
+    $('dashStatGrid').innerHTML=
+      stat('期间案件',(u.total||0)+' 件')+
+      stat('期间立项',(u.new||0)+' 件')+
+      stat('期间结项',(u.closed||0)+' 件')+
+      stat('期间暂停',(u.paused||0)+' 件')+
+      stat('期间进行中',(u.doing||0)+' 件')+
+      stat('期末在办',(u.doing_all||0)+' 件')+
+      stat('期间回款','¥ '+fmt(u.recovery))+
+      stat('期间代理费','¥ '+fmt(u.fee))+
+      stat('回款率',u.rate===null?'—':u.rate+'%');
+
+    /* 无数据友好引导 */
+    var eh=$('dashEmptyHint');
+    if(eh){
+      if(!(u.listed||0) && !(u.total||0) && !(u.cum_fee||0)){
+        eh.style.display='';
+        eh.innerHTML='<h4>当前区间暂无案件数据</h4>'+
+          '<div style="font-size:13px;color:#5a6478">可能原因：区间内无立项/回款/状态变更记录，或所选区间过短。</div>'+
+          '<ol>'+
+          '<li>点击工具栏右侧「<b>全部</b>」切换为全量区间，查看历史所有案件。</li>'+
+          '<li>前往左侧菜单「<a onclick="showPage(\'case\')">案件管理</a>」→「<b>+ 新建案件</b>」，录入案号 / 客户 / 代理费 / 状态后，运营看板将自动统计。</li>'+
+          '<li>案件归集到项目组后，进入「<a onclick="showPage(\'case\')">案件管理</a>」的「<b>看板</b>」视图可看到分阶段看板与回款周进度。</li>'+
+          '</ol>';
+      }else{
+        eh.style.display='none';eh.innerHTML='';
+      }
+    }
+
+    /* 一、区间概览 */
+    var h='<div class="panel-grid"><div><div class="ring-wrap">'+ringSvg(Math.round(u.rate||0))+
+      '<div class="ring-legend">'+
+      '<div>回款率（回款 ÷ 代理费）：<b>'+dashPct(u.rate)+'</b></div>'+
+      '<div>期间案件：<b>'+(u.total||0)+'</b> 件</div>'+
+      '<div class="hint" style="margin-top:6px">期末状态（截至 '+esc(rg.end)+'）</div>'+
+      '<div>在册案件：<b>'+(u.listed||0)+'</b> 件</div>'+
+      '<div>在办（进行中）：<b>'+(u.doing_all||0)+'</b> 件</div>'+
+      '<div>暂停：<b>'+(u.paused_all||0)+'</b> 件</div>'+
+      '<div>已结案：<b style="color:var(--kd-green)">'+(u.closed_all||0)+'</b> 件</div>'+
+      '</div></div></div>';
+    h+='<div><div class="panel-sub">案件流转（区间）</div>'+
+      '<div class="mini-stat"><span>立项（区间内建档）</span><span><b>'+(u.new||0)+'</b> 件</span></div>'+
+      '<div class="mini-stat"><span>结项（区间内结案）</span><span><b>'+(u.closed||0)+'</b> 件</span></div>'+
+      '<div class="mini-stat"><span>暂停（区间内暂停）</span><span><b>'+(u.paused||0)+'</b> 件</span></div>'+
+      '<div class="mini-stat"><span>进行中（期末在办）</span><span><b>'+(u.doing||0)+'</b> 件</span></div>'+
+      '</div>';
+    h+='<div><div class="panel-sub">合同与回款（区间）</div>'+
+      '<div class="mini-stat"><span>新签合同额（立项案件代理费）</span><span>'+dashMoney(u.new_fee)+'</span></div>'+
+      '<div class="mini-stat"><span>区间案件代理费合计</span><span>'+dashMoney(u.fee)+'</span></div>'+
+      '<div class="mini-stat"><span>区间回款金额</span><span>'+dashMoney(u.recovery)+'</span></div>'+
+      '<div class="mini-stat"><span>区间开票金额</span><span>'+dashMoney(u.invoice)+'</span></div>'+
+      '<div class="mini-stat"><span>区间标的额</span><span>'+dashMoney(u.subject)+'</span></div>'+
+      '<div class="mini-stat"><span>回款率</span><span><b>'+dashPct(u.rate)+'</b></span></div>'+
+      '</div>';
+    h+='<div><div class="panel-sub">累计口径（截至 '+esc(rg.end)+'）</div>'+
+      '<div class="mini-stat"><span>累计合同额（代理费）</span><span>'+dashMoney(u.cum_fee)+'</span></div>'+
+      '<div class="mini-stat"><span>累计回款金额</span><span>'+dashMoney(u.cum_recovery)+'</span></div>'+
+      '<div class="mini-stat"><span>累计回款率</span><span><b>'+dashPct(u.cum_rate)+'</b></span></div>'+
+      '</div></div>';
+    $('dashOverview').innerHTML=h;
+
+    /* 二、历史年度对比 */
+    var yy=d.yearly||[];
+    var yrows=yy.map(function(r){return [
+      '<td><b>'+esc(r.year)+'</b></td>','<td>'+r['new']+'</td>','<td>'+r.closed+'</td>',
+      '<td class="money">'+fmt(r.fee)+'</td>','<td class="money">'+fmt(r.recovery)+'</td>',
+      '<td>'+dashPct(r.rate)+'</td>',
+      '<td>'+dashTrend(r.yoy_new)+'</td>','<td>'+dashTrend(r.yoy_fee)+'</td>',
+      '<td>'+dashTrend(r.yoy_recovery)+'</td>']});
+    var yfoot=['<td><b>合计</b></td>','<td><b>'+dashSum(yy,'new')+'</b></td>',
+      '<td><b>'+dashSum(yy,'closed')+'</b></td>',
+      '<td class="money"><b>'+fmt(dashSum(yy,'fee'))+'</b></td>',
+      '<td class="money"><b>'+fmt(dashSum(yy,'recovery'))+'</b></td>',
+      '<td colspan="4"></td>'];
+    $('dashYearly').innerHTML=dashTable(
+      [{t:'年度'},{t:'新增案件'},{t:'结案'},{t:'新签合同额(¥)'},{t:'回款(¥)'},
+       {t:'回款率'},{t:'案件同比'},{t:'合同额同比'},{t:'回款同比'}],
+      yrows,'暂无历史数据',yfoot);
+
+    /* 三、区间月度对比 */
+    var mm=d.monthly||[];
+    var mrows=mm.map(function(r){return [
+      '<td><b>'+esc(r.month)+'</b></td>','<td>'+r['new']+'</td>','<td>'+r.closed+'</td>',
+      '<td class="money">'+fmt(r.fee)+'</td>','<td class="money">'+fmt(r.recovery)+'</td>',
+      '<td>'+dashPct(r.rate)+'</td>']});
+    var mfoot=['<td><b>合计</b></td>','<td><b>'+dashSum(mm,'new')+'</b></td>',
+      '<td><b>'+dashSum(mm,'closed')+'</b></td>',
+      '<td class="money"><b>'+fmt(dashSum(mm,'fee'))+'</b></td>',
+      '<td class="money"><b>'+fmt(dashSum(mm,'recovery'))+'</b></td>','<td></td>'];
+    $('dashMonthly').innerHTML=dashTable(
+      [{t:'月份'},{t:'新增案件'},{t:'结案'},{t:'新签合同额(¥)'},{t:'回款(¥)'},{t:'回款率'}],
+      mrows,'当前区间无数据',mfoot);
+
+    /* 四、项目进度 */
+    var cols4=[{t:'项目'},{t:'案件数'},{t:'立项'},{t:'结项'},{t:'暂停'},{t:'进行中'},
+      {t:'代理费(¥)'},{t:'回款(¥)'},{t:'回款率'},{t:'结案进度',w:'160px'}];
+    var prows=(d.projects||[]).map(function(r){return [
+      '<td><b>'+esc(r.name)+'</b></td>','<td>'+r.total+'</td>','<td>'+r['new']+'</td>',
+      '<td>'+r.closed+'</td>','<td>'+r.paused+'</td>','<td>'+r.doing+'</td>',
+      '<td class="money">'+fmt(r.fee)+'</td>','<td class="money">'+fmt(r.recovery)+'</td>',
+      '<td>'+dashPct(r.rate)+'</td>','<td>'+dashBar(r.close_rate)+'</td>']});
+    var pfoot=dashFoot(d.projects||[]);
+    $('dashProjects').innerHTML=dashTable(cols4,prows,'当前区间无项目数据',pfoot);
+
+    /* 五、人员业绩 */
+    var cols5=[{t:'人员（'+esc(rg.dim_label||'')+'）'},{t:'案件数'},{t:'立项'},{t:'结项'},
+      {t:'暂停'},{t:'进行中'},{t:'代理费(¥)'},{t:'回款(¥)'},{t:'回款率'},{t:'结案进度',w:'160px'}];
+    var urows=(d.persons||[]).map(function(r){return [
+      '<td><b>'+esc(r.name)+'</b></td>','<td>'+r.total+'</td>','<td>'+r['new']+'</td>',
+      '<td>'+r.closed+'</td>','<td>'+r.paused+'</td>','<td>'+r.doing+'</td>',
+      '<td class="money">'+fmt(r.fee)+'</td>','<td class="money">'+fmt(r.recovery)+'</td>',
+      '<td>'+dashPct(r.rate)+'</td>','<td>'+dashBar(r.close_rate)+'</td>']});
+    var ufoot=dashFoot(d.persons||[]);
+    $('dashPersons').innerHTML=dashTable(cols5,urows,'当前区间无人员数据',ufoot)+
+      '<div class="hint" style="margin-top:8px">注：代理费 / 回款按案件全额计入各关联人员（参与口径），'+
+      '因此人员合计可能大于全所合计；切换「人员口径」可按主承办人 / 开发人 / 小组成员分别查看。</div>';
+  });
+}
+function dashFoot(rows){
+  if(!rows.length)return null;
+  var tot=0,rec=0,rate=null;
+  rows.forEach(function(r){tot+=r.fee||0;rec+=r.recovery||0});
+  rate=tot?Math.round(rec/tot*1000)/10:null;
+  return ['<td><b>合计</b></td>','<td><b>'+dashSum(rows,'total')+'</b></td>',
+    '<td><b>'+dashSum(rows,'new')+'</b></td>','<td><b>'+dashSum(rows,'closed')+'</b></td>',
+    '<td><b>'+dashSum(rows,'paused')+'</b></td>','<td><b>'+dashSum(rows,'doing')+'</b></td>',
+    '<td class="money"><b>'+fmt(tot)+'</b></td>',
+    '<td class="money"><b>'+fmt(rec)+'</b></td>',
+    '<td><b>'+dashPct(rate)+'</b></td>','<td></td>'];
+}
+
+/* ================= 案件管理 ================= */
+function loadCases(){
+  // 首次进入时确保状态/执行状态元数据已加载（状态列中文显示）
+  if(!_caseStatusMeta||!_execStatusMeta){ loadStatusMeta(function(){loadCases()}); return; }
+  api('/api/cases?kw='+encodeURIComponent($('caseKw').value||'')).then(function(j){
+    var h='';
+    j.data.forEach(function(c){
+      var ready=c.settle_ready?1:0;
+      var stCode=normStatus(c.status), stMeta=statusByCode(stCode);
+      var stColor=stMeta.color||'#5a6478';
+      var stLabel=stMeta.label||c.status||'—';
+      h+='<tr'+(ready?' class="settle-ready"':'')+'><td>'+esc(c.case_no)+
+        '</td><td>'+esc(c.client_name)+'</td><td>'+esc(c.developer)+
+        '</td><td>'+esc(c.owner)+'</td><td>'+esc(c.members)+'</td>'+
+        '<td class="money">'+fmt(c.agent_fee)+'</td><td class="money">'+fmt(c.court_fee_advance)+
+        '</td><td class="money">'+fmt(c.invoice_amount)+'</td>'+
+        '<td><span class="tag case-status" style="background:'+stColor+'22;color:'+stColor+';border:1px solid '+stColor+'55">'+esc(stLabel)+'</span>'+
+        (ready?' <span class="tag ready">可结算</span>':'')+(c.active?'':' <span class="tag red">已停止</span>')+'</td>'+
+        '<td class="hint">'+esc(c.updated_by)+'<br>'+esc(c.updated_at)+'</td><td>';
+      if(can('case.edit'))h+='<button class="btn sm" onclick=\'editCase('+JSON.stringify(c)+')\'>编辑</button> ';
+      if(c.active){
+        if(can('case.stop'))h+='<button class="btn sm" onclick="stopCase('+c.id+')">停止</button> ';
+      }else{
+        if(can('case.enable'))h+='<button class="btn sm primary" onclick="enableCase('+c.id+')">启用</button> ';
+      }
+      if(can('case.delete'))h+='<button class="btn sm danger" onclick="delCase('+c.id+')">删除</button>';
+      h+='</td></tr>';
+    });
+    document.querySelector('#caseTable tbody').innerHTML=h||'<tr><td colspan="11" class="empty">暂无案件</td></tr>';
+    $('btnCaseNew').style.display=can('case.edit')?'':'none';
+    $('btnCaseExport').style.display=can('file.export')?'':'none';
+  });
+}
+
+/* ================= 案件状态下拉组件 & 看板 ================= */
+var _caseStatusMeta=null, _execStatusMeta=null, _caseKanbanData=[], _kanbanFilters={status:'',exec:''};
+
+function loadStatusMeta(cb){
+  if(_caseStatusMeta&&_execStatusMeta){cb&&cb();return}
+  Promise.all([api('/api/meta/case-status'),api('/api/meta/execution-status')]).then(function(rs){
+    if(rs[0].ok)_caseStatusMeta=rs[0].data;
+    if(rs[1].ok)_execStatusMeta=rs[1].data;
+    cb&&cb();
+  });
+}
+
+function statusByCode(code){ return (_caseStatusMeta||[]).find(function(s){return s.code===code})||{}; }
+function execByCode(code){ return (_execStatusMeta||[]).find(function(s){return s.code===code})||{}; }
+function normStatus(raw){
+  var code=raw||'';
+  if(_caseStatusMeta){
+    var found=_caseStatusMeta.find(function(s){return s.code===code||s.label===code});
+    if(found)return found.code;
+  }
+  var map={'进行中':'first_instance','已结案':'closed','暂停':'terminated'};
+  return map[code]||code||'pending_contact';
+}
+function isClosedStatus(code){return ['closed','archived','mediation_closed'].indexOf(code)>=0;}
+function isPausedStatus(code){return code==='terminated';}
+function isFlowStatus(code){var s=statusByCode(code);return s.category==='flow';}
+
+/* 渲染一个状态下拉组件到 container；current 为 code；onChange(code,label) */
+function renderStatusSelect(container, current, onChange, opts){
+  opts=opts||{};
+  var meta=_caseStatusMeta||[];
+  var curCode=normStatus(current);
+  var curMeta=statusByCode(curCode);
+  var wrap=document.createElement('span');wrap.className='status-select-wrap';
+  wrap.innerHTML='<div class="status-select-trigger"><span class="dot" style="background:'+(curMeta.color||'#999')+'"></span><span>'+(curMeta.label||'选择状态')+'</span><span style="margin-left:auto">▼</span></div>'+
+    '<div class="status-select-layer"><div class="status-select-filter"><input type="text" placeholder="搜索状态 / 拼音首字母"></div><div class="status-select-list"></div></div>';
+  container.appendChild(wrap);
+  var layer=wrap.querySelector('.status-select-layer');
+  var list=wrap.querySelector('.status-select-list');
+  var input=wrap.querySelector('input');
+  var trigger=wrap.querySelector('.status-select-trigger');
+
+  function renderList(filter){
+    filter=(filter||'').toLowerCase();
+    var groups={'flow':'正常流转','result':'结果类','terminated':'终止类','abnormal':'异常类'};
+    var h='';
+    Object.keys(groups).forEach(function(cat){
+      var items=meta.filter(function(s){return s.category===cat && (!filter || s.label.toLowerCase().indexOf(filter)>=0 || pinyinFirst(s.label).indexOf(filter)>=0);});
+      if(!items.length)return;
+      h+='<div class="status-select-group"><div class="status-select-group-title">'+groups[cat]+'</div>';
+      items.forEach(function(s){
+        var disabled=opts.allowedNext && opts.allowedNext.indexOf(s.code)<0 && s.code!==curCode;
+        h+='<div class="status-select-option '+(s.code===curCode?'selected':'')+(disabled?' disabled':'')+'" data-code="'+esc(s.code)+'">'+
+          '<span class="dot" style="background:'+s.color+'"></span><span>'+esc(s.label)+'</span></div>';
+      });
+      h+='</div>';
+    });
+    list.innerHTML=h||'<div class="status-select-option disabled">无匹配状态</div>';
+    list.querySelectorAll('.status-select-option[data-code]').forEach(function(el){
+      el.onclick=function(){
+        if(el.classList.contains('disabled'))return;
+        var code=el.dataset.code;
+        var meta=statusByCode(code);
+        if(opts.confirmResult && ['result','terminated','abnormal'].indexOf(meta.category)>=0){
+          var reason=prompt('进入“'+meta.label+'”需填写原因：');
+          if(reason===null)return;
+          reason=(reason||'').trim();
+          if(!reason){toast('原因不能为空',1);return;}
+          onChange(code,meta.label,reason);
+        }else{
+          onChange(code,meta.label);
+        }
+        layer.classList.remove('open');
+      };
+    });
+  }
+  function pinyinFirst(str){
+    var map={'待':'d','接':'j','咨':'z','询':'x','评':'p','估':'g','签':'q','约':'y','收':'s','案':'a','立':'l','审':'s','一':'y','二':'e','执':'z','行':'x','结':'j','归':'g','调':'t','撤':'c','驳':'b','终':'z','止':'z','拒':'j','利':'l','益':'y','冲':'c','突':'t','未':'w'};
+    return (str||'').split('').map(function(c){return map[c]||c.toLowerCase()}).join('');
+  }
+  renderList('');
+  trigger.onclick=function(e){e.stopPropagation();layer.classList.toggle('open');renderList(input.value);};
+  input.oninput=function(){renderList(this.value);};
+  input.onkeydown=function(e){e.stopPropagation();};
+  document.addEventListener('click',function(e){if(!wrap.contains(e.target))layer.classList.remove('open');});
+}
+
+function switchCaseView(mode){
+  $('btnViewList').classList.toggle('active',mode==='list');
+  $('btnViewKanban').classList.toggle('active',mode==='kanban');
+  $('caseListWrap').style.display=mode==='list'?'block':'none';
+  $('caseKanbanWrap').style.display=mode==='kanban'?'block':'none';
+  if(mode==='kanban')loadCaseKanban();
+}
+
+function resetKanbanFilters(){
+  _kanbanFilters={status:'',exec:''};
+  loadCaseKanban();
+}
+
+function loadCaseKanban(){
+  loadStatusMeta(function(){
+    api('/api/cases?kw='+encodeURIComponent($('caseKw').value||'')).then(function(j){
+      _caseKanbanData=j.data||[];
+      renderKanbanFilters();
+      renderKanban();
+      renderKanbanKpi();
+      renderKanbanCharts();
+    });
+  });
+}
+
+function renderKanbanFilters(){
+  var sf=$('caseStatusFilterWrap');sf.innerHTML='';
+  renderStatusSelect(sf,_kanbanFilters.status,function(code,label){
+    _kanbanFilters.status=code;
+    renderKanban();renderKanbanKpi();renderKanbanCharts();
+  });
+  var ef=$('caseExecStatusFilterWrap');ef.innerHTML='';
+  var execMeta=_execStatusMeta||[];
+  var sel=document.createElement('select');sel.style.cssText='padding:5px 8px;border:1px solid var(--kd-border);border-radius:4px;font-size:13px';
+  sel.innerHTML='<option value="">全部</option>'+execMeta.map(function(s){return '<option value="'+esc(s.code)+'">'+esc(s.label)+'</option>'}).join('');
+  sel.value=_kanbanFilters.exec;
+  sel.onchange=function(){_kanbanFilters.exec=this.value;renderKanban();renderKanbanKpi();renderKanbanCharts();};
+  ef.appendChild(sel);
+}
+
+function filteredKanbanCases(){
+  return _caseKanbanData.filter(function(c){
+    var code=normStatus(c.status);
+    if(_kanbanFilters.status && code!==_kanbanFilters.status)return false;
+    if(_kanbanFilters.exec && c.execution_status!==_kanbanFilters.exec)return false;
+    return true;
+  });
+}
+
+function renderKanbanKpi(){
+  var cases=filteredKanbanCases();
+  var total=cases.length;
+  var newCnt=0, doing=0, closed=0, paused=0;
+  var fee=0, rec=0, overdue=0;
+  var today=new Date().toISOString().slice(0,10);
+  cases.forEach(function(c){
+    var code=normStatus(c.status);
+    fee+=Number(c.agent_fee||0);
+    rec+=Number(c.invoice_amount||0); // 简化：用开票金额近似已回款
+    if(code==='pending_contact' || code==='consulting')newCnt++;
+    if(isFlowStatus(code))doing++;
+    if(isClosedStatus(code))closed++;
+    if(isPausedStatus(code))paused++;
+  });
+  var rate=fee>0?Math.round(rec/fee*1000)/10:null;
+  var cards=[
+    {label:'本月新收案',value:newCnt,unit:'件'},
+    {label:'在办案件',value:doing,unit:'件'},
+    {label:'本月回款',value:(rec/10000).toFixed(1),unit:'万',trend:'↑12%',trendUp:true},
+    {label:'未回款应收',value:((fee-rec)/10000).toFixed(1),unit:'万',sub:fee>rec?'逾期部分红色':'正常'},
+    {label:'综合回款率',value:rate!=null?rate:'—',unit:rate!=null?'%':''}
+  ];
+  $('caseKpiGrid').innerHTML=cards.map(function(k){
+    var trend=k.trend?'<div class="kpi-trend '+(k.trendUp?'up':'down')+'">'+k.trend+'</div>':'';
+    var sub=k.sub?'<div class="kpi-sub">'+k.sub+'</div>':'';
+    return '<div class="kpi-card"><div class="kpi-label">'+esc(k.label)+'</div><div class="kpi-value">'+esc(String(k.value))+(k.unit?'<span class="kpi-unit">'+esc(k.unit)+'</span>':'')+'</div>'+trend+sub+'</div>';
+  }).join('');
+}
+
+function renderKanban(){
+  var cases=filteredKanbanCases();
+  // 5 个阶段列
+  var cols=[
+    {key:'consult',title:'咨询洽谈',codes:['pending_contact','consulting'],color:'#3B82F6'},
+    {key:'signed',title:'已签约委托',codes:['consulted','contracting'],color:'#F59E0B'},
+    {key:'trial',title:'立案审理',codes:['filing_prepare','first_instance','second_instance'],color:'#1E3A5F'},
+    {key:'exec',title:'强制执行',codes:['execution'],color:'#D97706'},
+    {key:'done',title:'已结案归档',codes:['closed','archived','mediation_closed','withdrawn','dismissed','terminated','rejected_conflict','rejected_fee'],color:'#10B981'}
+  ];
+  var h='';
+  cols.forEach(function(col){
+    var colCases=cases.filter(function(c){return col.codes.indexOf(normStatus(c.status))>=0});
+    var amount=colCases.reduce(function(a,c){return a+Number(c.agent_fee||0)},0);
+    h+='<div class="kanban-col" data-col="'+esc(col.key)+'" ondragover="kanbanDragOver(event)" ondrop="kanbanDrop(event)" ondragleave="kanbanDragLeave(event)">'+
+      '<div class="kanban-col-header"><div class="col-title"><span class="col-dot" style="background:'+col.color+'"></span>'+esc(col.title)+'</div><span class="col-count">'+colCases.length+'件 / ¥'+(amount/10000).toFixed(1)+'万</span></div>'+
+      '<div class="kanban-col-body" data-col="'+esc(col.key)+'">';
+    if(!colCases.length){
+      h+='<div class="kanban-empty">拖拽案件到此处</div>';
+    }else{
+      colCases.forEach(function(c){
+        var code=normStatus(c.status);
+        var meta=statusByCode(code);
+        var execMeta=execByCode(c.execution_status||'');
+        var rec=Number(c.invoice_amount||0);
+        var fee=Number(c.agent_fee||0);
+        var rate=fee>0?Math.round(rec/fee*100):0;
+        var owner=(c.owner||'未分配').split(',')[0];
+        h+='<div class="kanban-card" draggable="true" data-id="'+c.id+'" data-status="'+esc(code)+'" ondragstart="kanbanDragStart(event)" ondragend="kanbanDragEnd(event)">'+
+          '<div class="case-title">'+esc(c.case_no)+' '+esc(c.client_name)+'</div>'+
+          '<div class="case-meta"><span class="case-avatar">'+(owner?owner.slice(0,1):'?')+'</span>'+esc(owner)+' · '+esc(meta.label||c.status)+'</div>'+
+          '<div class="case-meta">代理费 ¥'+fmt(fee)+' · 回款率 '+rate+'%</div>'+
+          '<div class="case-footer">'+
+            (execMeta.label?'<span class="exec-badge" style="background:'+execMeta.color+'">'+esc(execMeta.label)+'</span>':'<span></span>')+
+            '<span class="money-sm">¥'+(fee/10000).toFixed(1)+'万</span>'+
+          '</div>'+
+        '</div>';
+      });
+    }
+    h+='</div></div>';
+  });
+  $('kanbanBoard').innerHTML=h;
+}
+
+function kanbanDragStart(e){
+  e.dataTransfer.setData('text/plain',e.target.dataset.id);
+  e.target.classList.add('dragging');
+}
+function kanbanDragEnd(e){e.target.classList.remove('dragging');}
+function kanbanDragOver(e){e.preventDefault();e.currentTarget.classList.add('drag-over');}
+function kanbanDragLeave(e){e.currentTarget.classList.remove('drag-over');}
+function kanbanDrop(e){
+  e.preventDefault();
+  var col=e.currentTarget.closest('.kanban-col');
+  if(!col)return;
+  col.querySelector('.kanban-col-body').classList.remove('drag-over');
+  var id=parseInt(e.dataTransfer.getData('text/plain'),10);
+  var targetCol=col.dataset.col;
+  var c=_caseKanbanData.find(function(x){return x.id===id});
+  if(!c)return;
+  // 根据目标列取第一个状态
+  var map={consult:'consulting',signed:'contracting',trial:'first_instance',exec:'execution',done:'closed'};
+  var targetCode=map[targetCol];
+  var curCode=normStatus(c.status);
+  if(curCode===targetCode){toast('已经是该阶段',1);return;}
+  var meta=statusByCode(targetCode);
+  function doPatch(reason){
+    api('/api/cases/'+id+'/status',{method:'PATCH',body:JSON.stringify({status:targetCode,reason:reason||''})}).then(function(r){
+      if(!r.ok)return toast(r.msg,1);
+      toast('状态已更新为 '+meta.label);
+      loadCaseKanban();
+    });
+  }
+  if(['result','terminated','abnormal'].indexOf(meta.category)>=0){
+    var reason=prompt('进入“'+meta.label+'”需填写原因：');
+    if(reason===null)return;
+    reason=(reason||'').trim();
+    if(!reason){toast('原因不能为空',1);return;}
+    doPatch(reason);
+  }else{
+    doPatch();
+  }
+}
+
+function renderKanbanCharts(){
+  var cases=filteredKanbanCases();
+  // 本月回款进度：按自然周
+  var weeks=['第1周','第2周','第3周','第4周'];
+  var weekVal=[0,0,0,0];
+  var today=new Date();
+  cases.forEach(function(c){
+    // 简化：用 updated_at 所在周近似
+    var d=c.updated_at?new Date(c.updated_at.replace(/-/g,'/')):null;
+    if(d && d.getMonth()===today.getMonth() && d.getFullYear()===today.getFullYear()){
+      var w=Math.min(3,Math.floor(d.getDate()/8));
+      weekVal[w]+=Number(c.invoice_amount||0);
+    }
+  });
+  var max=Math.max.apply(null,weekVal)||1;
+  var total=weekVal.reduce(function(a,b){return a+b},0);
+  var goal=Math.max(total*1.2,1);
+  $('kanbanRecoveryChart').innerHTML=weeks.map(function(w,i){
+    var pct=Math.round(weekVal[i]/goal*100);
+    return '<div class="mini-bar" style="height:'+pct+'%;background:var(--kd-blue)"><span class="mini-bar-rate">'+pct+'%</span><span class="mini-bar-label">'+w+'</span></div>';
+  }).join('');
+  // 执行案件进度
+  var execCases=cases.filter(function(c){return normStatus(c.status)==='execution';});
+  var groups={};
+  (_execStatusMeta||[]).forEach(function(s){groups[s.code]={label:s.label,color:s.color,count:0,amount:0};});
+  execCases.forEach(function(c){var s=c.execution_status||'not_applied';if(!groups[s])groups[s]={label:s,color:'#999',count:0,amount:0};groups[s].count++;groups[s].amount+=Number(c.agent_fee||0);});
+  var totalExec=Math.max(execCases.reduce(function(a,c){return a+Number(c.agent_fee||0)},0),1);
+  var arr=Object.keys(groups).map(function(k){return groups[k]}).filter(function(g){return g.count>0});
+  $('kanbanExecPanel').innerHTML=arr.length?arr.map(function(g){
+    var pct=Math.round(g.amount/totalExec*100);
+    return '<div class="exec-panel-row"><span class="exec-name">'+esc(g.label)+'</span><div class="exec-bar"><div class="exec-fill" style="width:'+pct+'%;background:'+g.color+'"></div></div><span class="exec-count">'+g.count+'件</span></div>';
+  }).join(''):'<div class="kanban-empty">暂无执行阶段案件</div>';
+}
+
+function checkSettleAll(){
+  if(!can('case.edit'))return toast('无权限',1);
+  api('/api/cases/check-settle-all',{method:'POST',body:JSON.stringify({})}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    toast('已判断：'+j.ready_count+' 件案件达到结算条件（绿色高亮）');
+    loadCases();
+  });
+}
+/* 案件成员临时数组（编辑弹窗内）；角色统一：维护人/主承办人/协办人 */
+var _caseMembers=[];
+var ROLE_NAMES={maintainer:'维护人',owner:'主承办人',assistant:'协办人'};
+function renderCaseMembers(){
+  var h='';
+  _caseMembers.forEach(function(m,i){
+    var roleName=ROLE_NAMES[m.role]||m.role;
+    var rateTxt=(m.rate?' · 提成'+(m.rate*100).toFixed(1)+'%':'');
+    var guaTxt=' · 保底'+(m.guaranteed_amount!=null?Number(m.guaranteed_amount):0)+'元';
+    var fixTxt=(m.fixed_amount?' · 固定'+Number(m.fixed_amount)+'元':'');
+    h+='<span class="cm-chip" draggable="true" data-idx="'+i+'" style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid var(--kd-border);border-radius:4px;font-size:12px;margin:0 6px 6px 0;background:#fafbfd">'+
+      esc(m.person)+' · '+roleName+rateTxt+guaTxt+fixTxt+
+      ' <a style="color:var(--kd-red);cursor:pointer" onclick="removeCaseMember('+i+')">×</a></span>';
+  });
+  $('caseMemberList').innerHTML=h||'<span class="hint">尚未添加成员</span>';
+  // 拖拽排序（B1）：调整数组顺序，保存时随 /members/sync 全量重建持久化
+  $('caseMemberList').querySelectorAll('.cm-chip').forEach(function(el){
+    el.addEventListener('dragstart',function(e){
+      e.dataTransfer.setData('text/plain',el.dataset.idx);
+      e.dataTransfer.effectAllowed='move';el.style.opacity='.4';});
+    el.addEventListener('dragend',function(){el.style.opacity=''});
+    el.addEventListener('dragover',function(e){e.preventDefault();e.dataTransfer.dropEffect='move'});
+    el.addEventListener('drop',function(e){
+      e.preventDefault();
+      var from=parseInt(e.dataTransfer.getData('text/plain'),10),
+          to=parseInt(el.dataset.idx,10);
+      if(isNaN(from)||isNaN(to)||from===to)return;
+      var item=_caseMembers.splice(from,1)[0];
+      _caseMembers.splice(to,0,item);
+      renderCaseMembers();
+      toast('顺序已调整，保存案件后生效');
+    });
+  });
+}
+function addCaseMember(){
+  var person=$('cmName').value.trim(), role=$('cmRoleSel').value;
+  var ratePct=$('cmRate').value;
+  if(!person)return toast('请填写成员姓名',1);
+  if(_caseMembers.length>=10)return toast('小组成员最多 10 人',1);
+  var rate=ratePct===''?null:Number(ratePct)/100;
+  // 保底金额：未填按角色默认（维护人 0，其他成员 600）
+  var gua=$('cmGua').value;
+  gua=(gua===''?null:Number(gua));
+  var fixed=$('cmFixed').value===''?0:Number($('cmFixed').value);
+  _caseMembers.push({person:person,role:role,rate:rate,
+    guaranteed_amount:gua,fixed_amount:fixed});
+  $('cmName').value='';$('cmRate').value='';$('cmGua').value='';$('cmFixed').value='';
+  renderCaseMembers();
+  syncMemberSummary();
+  toast('已添加（保底金额可在保存前修改）');
+}
+function removeCaseMember(i){_caseMembers.splice(i,1);renderCaseMembers();syncMemberSummary()}
+
+/* 实时预览：max(项目回款 × 提成率, 保底金额) + 固定金额 → 取整 */
+function updateMemberPreview(){
+  var pv=$('memberPreview');
+  if(!pv)return;
+  // 回款金额近似：代理费金额 + 开票金额（与薪酬计算口径一致）
+  var recovered=(Number($('cAgentFee')&&$('cAgentFee').value||0))+(Number($('cInvoice')&&$('cInvoice').value||0));
+  var ratePct=Number($('cmRate').value||0);
+  var rate=ratePct/100;
+  var gua=$('cmGua').value===''?(($('cmRoleSel').value==='maintainer')?0:600):Number($('cmGua').value);
+  var fixed=$('cmFixed').value===''?0:Number($('cmFixed').value);
+  if(!ratePct&&!fixed&&($('cmGua').value==='')){
+    pv.innerHTML='填写提成率后，预览将显示：<b>max(项目回款 × 比例, 保底) + 固定</b> = <span class="money">¥ 0</span>';
+    return;
+  }
+  var basis=recovered*rate;
+  var beforeMax=Math.max(basis,gua);
+  var exact=beforeMax+fixed;
+  var rounded=Math.round(exact);
+  pv.innerHTML='项目回款 <b>¥ '+fmt(recovered)+'</b> × 提成率 <b>'+ratePct.toFixed(1)+'%</b> = <b>¥ '+fmt(basis)+'</b> → 与保底 max(¥ '+fmt(basis)+', ¥ '+fmt(gua)+') = <b>¥ '+fmt(beforeMax)+'</b> + 固定 ¥ '+fmt(fixed)+' = <b>¥ '+fmt(exact)+'</b> → 取整 <span class="money">¥ '+fmt(rounded)+'</span>';
+}
+/* ---------- 案件类型下拉（settings.case_types，B2） ---------- */
+var _caseTypes=null;
+function loadCaseTypes(cb){
+  if(_caseTypes){cb&&cb();return}
+  api('/api/case-types').then(function(j){
+    _caseTypes=(j.data||[]).map(function(s){return String(s)});
+    cb&&cb();
+  });
+}
+function fillCaseTypeSelect(cur){
+  var types=(_caseTypes||[]).slice();
+  // 旧数据兼容：历史案件类型不在选项列表中的，补充进下拉并允许保留
+  if(cur && types.indexOf(cur)<0)types.push(cur);
+  var h='<option value="">— 请选择 —</option>';
+  types.forEach(function(t){h+='<option value="'+esc(t)+'">'+esc(t)+'</option>'});
+  $('cType').innerHTML=h;
+  $('cType').value=cur||'';
+  $('cType').onchange=fillSectorDatalist;
+}
+/* ---------- 案件类型「板块」二级选项（settings.case_type_sections） ---------- */
+var _caseTypeSections=null;
+function loadCaseTypeSectionsGlobal(cb){
+  api('/api/case-type-sections').then(function(j){_caseTypeSections=j.data||{};(cb||function(){})()});
+}
+function fillSectorDatalist(){
+  var t=$('cType').value;
+  var arr=(_caseTypeSections&&_caseTypeSections[t])||[];
+  var seen={},opts=[];
+  arr.forEach(function(s){if(s&&!seen[s]){seen[s]=1;opts.push(s)}});
+  var cur=($('cSection').value||'').trim();
+  if(cur&&!seen[cur])opts.push(cur);   // 当前已输入的自定义值也纳入候选
+  $('sectionList').innerHTML=opts.map(function(s){return '<option value="'+esc(s)+'"></option>'}).join('');
+}
+function addCaseSection(){
+  // 保存案件时，将本次填报的自定义板块回写配置（所有类型均支持自定义录入）
+  var t=$('cType').value, s=($('cSection').value||'').trim();
+  if(!t||!s)return;
+  var arr=(_caseTypeSections&&_caseTypeSections[t])||[];
+  if(arr.indexOf(s)>=0)return;
+  api('/api/case-type-sections',{method:'PUT',body:JSON.stringify({type:t,section:s})}).then(function(j){
+    if(j.ok){_caseTypeSections=j.data;}
+  });
+}
+function switchCaseMod(mod){
+  var paneMap={proj:'modPaneProj',member:'modPaneMember',fin:'modPaneFin'};
+  document.querySelectorAll('.mod-tab').forEach(function(t){
+    t.classList.toggle('active', t.dataset.mod===mod)});
+  document.querySelectorAll('.mod-pane').forEach(function(p){
+    p.classList.toggle('active', p.id===paneMap[mod])});
+}
+function syncMemberSummary(){
+  // 维护人 / 主承办人由成员表自动回填（只读），避免重复录入与数据不一致
+  var mains=_caseMembers.filter(function(m){return m.role==='maintainer'}).map(function(m){return m.person});
+  var owns=_caseMembers.filter(function(m){return m.role==='owner'}).map(function(m){return m.person});
+  $('cMaintain').value=mains.join('、');
+  $('cOwner').value=owns.join('、');
+}
+function fillCaseStatusSelect(curCode){
+  var sel=$('cStatus');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— 请选择状态 —</option>';
+  var meta=_caseStatusMeta;
+  if(!meta||!meta.length){
+    // 兜底：未加载元数据时回退到旧 3 态（保证表单不空白）
+    ['进行中','已结案','暂停'].forEach(function(s){
+      sel.innerHTML+='<option value="'+s+'"'+(s===curCode?' selected':'')+'>'+s+'</option>';
+    });
+    return;
+  }
+  // 按 category 分组
+  var groups={'flow':'正常流转','result':'结果类','terminated':'终止类','abnormal':'异常类'};
+  Object.keys(groups).forEach(function(cat){
+    var items=meta.filter(function(s){return s.category===cat});
+    if(!items.length)return;
+    sel.innerHTML+='<optgroup label="'+groups[cat]+'">';
+    items.forEach(function(s){
+      sel.innerHTML+='<option value="'+s.code+'"'+(s.code===curCode?' selected':'')+'>'+s.label+'</option>';
+    });
+    sel.innerHTML+='</optgroup>';
+  });
+}
+function openCaseModal(){
+  $('caseModalTitle').textContent='新建案件';
+  ['cId','cVersion','cNo','cClient','cOwner','cMaintain','cType',
+   'cPlaintiff','cDefendant','cSection','cCause','cProject','cFeeStandard','cRemark',
+   'cBorrow','cBorrowUser','cBorrowTime','cBorrowReturn','cRecoverMonth','cSettleMonth'].forEach(function(i){$(i).value=''});
+  ['cSubject','cExpected','cAgentFee','cCourtFee','cInvoice','cConfirmed','cExpectedText','cFinanceRemark'].forEach(function(i){$(i).value=''});
+  // 状态：优先用新枚举的「待接洽」code；若元数据未加载则回退旧「进行中」
+  var defCode=(_caseStatusMeta&&_caseStatusMeta[0])?_caseStatusMeta[0].code:'进行中';
+  loadStatusMeta(function(){ fillCaseStatusSelect(defCode) });
+  if(!_caseStatusMeta) fillCaseStatusSelect('进行中');
+  $('cArchive').value='未归档';
+  loadCaseTypeSectionsGlobal();
+  loadCaseTypes(function(){fillCaseTypeSelect('');fillSectorDatalist()});
+  _caseMembers=[];renderCaseMembers();syncMemberSummary();
+  switchCaseMod('proj');
+  loadRecoveryFin();
+  $('caseMask').style.display='flex';
+}
+function editCase(c){
+  openCaseModal();$('caseModalTitle').textContent='编辑案件 '+c.case_no;
+  $('cId').value=c.id;$('cVersion').value=c.version;$('cNo').value=c.case_no;
+  $('cClient').value=c.client_name;
+  $('cRecoverMonth').value=c.recover_month||'';$('cSettleMonth').value=c.settle_month||'';
+  $('cConfirmed').value=c.confirmed_amount||'';
+  $('cArchive').value=c.archive_status||'未归档';
+  $('cBorrow').value=c.archive_borrow||'';$('cBorrowUser').value=c.borrow_user||'';
+  $('cBorrowTime').value=c.borrow_time||'';$('cBorrowReturn').value=c.borrow_return_time||'';
+  loadCaseTypes(function(){fillCaseTypeSelect(c.case_type||'')});
+  $('cPlaintiff').value=c.plaintiff||'';$('cDefendant').value=c.defendant||'';
+  $('cSection').value=c.section||'';$('cCause').value=c.case_cause||'';
+  $('cProject').value=c.project||'';$('cFeeStandard').value=c.fee_standard||'';
+  $('cSubject').value=c.subject_amount||'';$('cExpected').value=c.expected_profit||'';
+  $('cExpectedText').value=c.expected_profit_text||'';
+  $('cFinanceRemark').value=c.finance_remark||'';
+  // 状态：先以原始值占位（兼容旧中文），元数据加载后归一为 code 再刷
+  $('cStatus').value=c.status;
+  loadStatusMeta(function(){ fillCaseStatusSelect(normStatus(c.status)) });
+  $('cAgentFee').value=c.agent_fee;
+  $('cCourtFee').value=c.court_fee_advance;$('cInvoice').value=c.invoice_amount;
+  $('cRemark').value=c.remark;
+  // 加载成员（旧角色 developer 自动归一为 maintainer）
+  _caseMembers=[];
+  api('/api/cases/'+c.id+'/members').then(function(j){
+    (j.data||[]).forEach(function(m){
+      _caseMembers.push({id:m.id,person:m.person,
+        role:(m.role==='developer'?'maintainer':m.role),
+        rate:m.rate,guaranteed_amount:m.guaranteed_amount,fixed_amount:m.fixed_amount});
+    });
+    renderCaseMembers();syncMemberSummary();
+  });
+  loadRecoveryFin();
+}
+function closeModal(id){$(id).style.display='none'}
+function saveCase(){
+  var id=$('cId').value;
+  // 注：维护人(maintain_user)/主承办人(owner)/开发人 不再手工提交，
+  // 统一由「项目组成员」模块同步写入，避免重复数据与保存后被覆盖。
+  var fields={client_name:$('cClient').value,
+    archive_status:$('cArchive').value,archive_borrow:$('cBorrow').value,
+    borrow_user:$('cBorrowUser').value,borrow_time:$('cBorrowTime').value,
+    borrow_return_time:$('cBorrowReturn').value,
+    recover_month:$('cRecoverMonth').value,settle_month:$('cSettleMonth').value,
+    case_type:$('cType').value,status:$('cStatus').value,remark:$('cRemark').value,
+    plaintiff:$('cPlaintiff').value,defendant:$('cDefendant').value,
+    section:$('cSection').value,case_cause:$('cCause').value,
+    project:$('cProject').value,fee_standard:$('cFeeStandard').value};
+  if($('cNo').value.trim())fields.case_no=$('cNo').value.trim();   // 手动录入案号
+  if(can('case.finance')){fields.subject_amount=$('cSubject').value;fields.expected_profit=$('cExpected').value;
+    fields.agent_fee=$('cAgentFee').value;fields.court_fee_advance=$('cCourtFee').value;fields.invoice_amount=$('cInvoice').value;
+    fields.confirmed_amount=$('cConfirmed').value;
+    fields.expected_profit_text=$('cExpectedText').value;fields.finance_remark=$('cFinanceRemark').value}
+  function syncMembers(cid){
+    if(!cid)return;
+    api('/api/cases/'+cid+'/members/sync',{method:'POST',
+      body:JSON.stringify({members:_caseMembers.map(function(m){
+        return {person:m.person,role:m.role,rate:m.rate,
+                guaranteed_amount:m.guaranteed_amount,fixed_amount:m.fixed_amount}})})})
+      .then(function(){loadCases()});
+  }
+  if(id){
+    api('/api/cases/'+id,{method:'PUT',body:JSON.stringify({
+      base_version:Number($('cVersion').value),fields:fields})}).then(function(j){
+      if(!j.ok)return toast(j.msg,1);
+      closeModal('caseMask');
+      if(j.conflict_merged){toast('检测到他人同时修改，已按「最后写入优先」合并',1)}
+      else toast('保存成功');
+      syncMembers(id);addCaseSection();
+    });
+  }else{
+    api('/api/cases',{method:'POST',body:JSON.stringify(fields)}).then(function(j){
+      if(!j.ok)return toast(j.msg,1);
+      closeModal('caseMask');toast('已创建，案号：'+j.case_no);
+      syncMembers(j.id);addCaseSection();
+    });
+  }
+}
+function delCase(id){
+  if(!confirm('确定删除该案件？删除后仅财务经理可见日志记录。'))return;
+  api('/api/cases/'+id,{method:'DELETE'}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);toast('已删除');loadCases()});
+}
+function stopCase(id){
+  if(!can('case.stop'))return toast('无停止案件权限',1);
+  if(!confirm('确定停止该案件？停止后该案件将标记为停用（数据保留，可再次启用）。'))return;
+  api('/api/cases/'+id+'/active',{method:'PUT',body:JSON.stringify({active:0})}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);toast('已停止');loadCases()});
+}
+function enableCase(id){
+  if(!can('case.enable'))return toast('无启用案件权限',1);
+  if(!confirm('确定启用该案件？'))return;
+  api('/api/cases/'+id+'/active',{method:'PUT',body:JSON.stringify({active:1})}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);toast('已启用');loadCases()});
+}
+function exportCases(){location.href='/api/cases/export'}
+
+/* ================= 薪酬 ================= */
+function loadSalary(){
+  calcSalary();
+}
+function calcSalary(){
+  var month=$('salaryMonth')?$('salaryMonth').value:'';
+  var kw=$('salaryKw')?$('salaryKw').value.trim():'';
+  var url='/api/salary/calc'+(month?('?month='+encodeURIComponent(month)):'');
+  var pending=null,settled=null;
+  function settleUrl(){
+    var s='/api/settlements';
+    var p=[];if(month)p.push('month='+encodeURIComponent(month));if(kw)p.push('kw='+encodeURIComponent(kw));
+    if(p.length)s+='?'+p.join('&');return s;
+  }
+  // 并发拉取待结算与已结算
+  Promise.all([api(url), api(settleUrl())]).then(function(r){
+    pending=r[0].data||[];settled=r[1].data||[];
+    renderSalaryResult(pending,settled,kw);
+  });
+}
+function renderSalaryResult(pending,settled,kw){
+  // 关键字二次过滤（API 也已过滤，前端过滤避免大小写/部分字段差异）
+  function matchCase(c){
+    if(!kw)return true;
+    var k=kw.toLowerCase();
+    if((c.case_no||'').toLowerCase().indexOf(k)>=0)return true;
+    if((c.client_name||'').toLowerCase().indexOf(k)>=0)return true;
+    return (c.items||[]).some(function(it){return (it.person||'').toLowerCase().indexOf(k)>=0});
+  }
+  var pendingFiltered=pending.filter(matchCase);
+  var h='';
+  // ============ 待结算 ============
+  h+='<div style="margin-top:14px"><b class="tag ready">待结算（'+pendingFiltered.length+' 件）</b>';
+  // 把待结算展平为 (成员) 行的形式：按 案号+成员 为单位
+  var pendingRows=[];pendingFiltered.forEach(function(c){
+    if(!c.items.length){return}
+    c.items.forEach(function(it){pendingRows.push({case_id:c.case_id,case_no:c.case_no,client:c.client_name,
+      month:c.settle_month||'-',person:it.person,role:it.role_name||it.role,
+      rate:it.rate,gua:it.guaranteed_amount,fixed:it.fixed,
+      recovered:c.recovered,amount:it.amount,adjusted:it.adjusted,calc:it.calc})});
+  });
+  h+=renderSalaryTable(pendingRows,true,'salPendingTable','待结算数据');
+  h+='<div style="margin-top:10px;text-align:right">';
+  h+='<button class="btn" onclick="toggleAllPending(true)">全选</button> ';
+  h+='<button class="btn" onclick="toggleAllPending(false)">取消全选</button> ';
+  h+='<button class="btn" onclick="onlyPendingReady()">仅可结算</button> ';
+  h+='<button class="btn primary" onclick="batchSettleFromSalary()">一键确定结算</button>';
+  h+='</div></div>';
+  // ============ 已结算 ============
+  h+='<div style="margin-top:24px"><b class="tag done">已结算（'+settled.length+' 条）</b>';
+  var settledRows=settled.map(function(s){
+    return {settle_id:s.id,batch_no:s.batch_no,month:(s.created_at||'').substring(0,7),
+      case_no:s.case_no||'-',person:s.user_name||'-',amount:s.amount||0,
+      created_by:s.created_by||'-',created_at:s.created_at||'-'};
+  });
+  h+=renderSettledTable(settledRows);
+  h+='</div>';
+  $('salaryResult').innerHTML=h||'<div class="empty">暂无数据</div>';
+}
+function renderSalaryTable(rows,withSelect,tableId,emptyTxt){
+  var h='<div style="overflow-x:auto;margin-top:10px"><table id="'+tableId+'"><thead><tr>';
+  if(withSelect)h+='<th style="width:36px"><input type="checkbox" id="'+tableId+'_all" onclick="togglePendingCk(this)"></th>';
+  h+='<th>结算月</th><th>案号</th><th>小组成员</th><th>岗位</th>'+
+     '<th>回款金额(¥)</th><th>提成率</th><th>固定金额(¥)</th><th>保底金额(¥)</th>'+
+     '<th>提成金额(¥)</th><th>是否确定结算</th></tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="'+(withSelect?11:10)+'" class="empty">'+emptyTxt+'</td></tr>';
+  rows.forEach(function(r){
+    var ready=!!(r.amount>0);
+    h+='<tr'+(ready?' class="settle-ready"':'')+'>';
+    if(withSelect)h+='<td><input type="checkbox" class="salPendCk" value="'+r.case_id+'"></td>';
+    h+='<td>'+esc(r.month)+'</td>'+
+       '<td><b>'+esc(r.case_no)+'</b></td>'+
+       '<td>'+esc(r.person)+'</td>'+
+       '<td>'+esc(r.role)+'</td>'+
+       '<td class="money">'+fmt(r.recovered||0)+'</td>'+
+       '<td>'+(r.rate!=null?((r.rate*100).toFixed(2))+'%':'-')+'</td>'+
+       '<td class="money">'+(r.fixed?fmt(r.fixed):'-')+'</td>'+
+       '<td class="money">'+(r.gua!=null?fmt(r.gua):'-')+'</td>'+
+       '<td class="money"><b>'+fmt(r.amount)+'</b>'+(r.adjusted?' <span class="tag red sm">已调整</span>':'')+
+         ' <button class="btn xs" onclick="adjustSalary('+r.case_id+',\''+esc(r.person).replace(/'/g,'')+'\',\''+esc(r.month||'').replace(/'/g,'')+'\','+r.amount+')">调整</button></td>'+
+       '<td>'+(ready?'<span class="tag ready">是</span>':'<span class="hint">否</span>')+'</td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+function renderSettledTable(rows){
+  var h='<div style="overflow-x:auto;margin-top:10px"><table><thead><tr>'+
+    '<th>结算月</th><th>案号</th><th>小组成员</th><th>岗位</th>'+
+    '<th>回款金额</th><th>提成率</th><th>固定金额</th><th>保底金额</th>'+
+    '<th>提成金额(¥)</th><th>是否确定结算</th></tr></thead><tbody>';
+  if(!rows.length)h+='<tr><td colspan="10" class="empty">暂无已结算记录</td></tr>';
+  rows.forEach(function(r){
+    h+='<tr><td>'+esc(r.month)+'</td>'+
+      '<td><b>'+esc(r.case_no)+'</b></td>'+
+      '<td>'+esc(r.person)+'</td>'+
+      '<td class="hint">-</td>'+
+      '<td class="hint">-</td>'+
+      '<td class="hint">-</td>'+
+      '<td class="hint">-</td>'+
+      '<td class="hint">-</td>'+
+      '<td class="money"><b>'+fmt(r.amount)+'</b></td>'+
+      '<td><span class="tag done">是</span></td></tr>';
+  });
+  h+='</tbody></table></div>';
+  return h;
+}
+function togglePendingCk(allCb){
+  document.querySelectorAll('.salPendCk').forEach(function(c){c.checked=allCb.checked});
+}
+function toggleAllPending(checked){
+  document.querySelectorAll('.salPendCk').forEach(function(c){c.checked=checked});
+}
+function onlyPendingReady(){
+  document.querySelectorAll('#salPendingTable tbody tr').forEach(function(tr){
+    var cb=tr.querySelector('.salPendCk');if(!cb)return;
+    cb.checked=tr.classList.contains('settle-ready');
+  });
+  toast('已勾选所有「可结算」案件');
+}
+function batchSettleFromSalary(){
+  // 收集勾选的案件 id（去重）
+  var ids=[];var seen={};
+  document.querySelectorAll('.salPendCk:checked').forEach(function(c){
+    var v=Number(c.value);if(!seen[v]){seen[v]=1;ids.push(v);}
+  });
+  if(!ids.length)return toast('请先勾选待结算案件',1);
+  if(!confirm('将为 '+ids.length+' 件案件生成 Word 结算单，结算后该批次不可撤销，继续？'))return;
+  api('/api/settlements/generate',{method:'POST',body:JSON.stringify({case_ids:ids})}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    toast('已生成 '+j.count+' 份结算单，正在下载...');
+    if(j.download){var a=document.createElement('a');a.href=j.download;a.click();}
+    setTimeout(calcSalary,800);
+  });
+}
+var _adj={};
+function adjustSalary(caseId,person,month,cur){
+  if(!can('salary.edit'))return toast('无权限',1);
+  _adj={case_id:caseId,person:person,month:month};
+  $('adjInfo').innerHTML='成员：<b>'+esc(person)+'</b>　结算月：<b>'+esc(month)+'</b><br>当前金额：<b class="money">¥ '+fmt(cur)+'</b>';
+  $('adjAmount').value='';
+  $('adjMask').style.display='flex';
+  setTimeout(function(){$('adjAmount').focus()},50);
+}
+function submitAdjust(recover){
+  var body={case_id:_adj.case_id,person:_adj.person,month:_adj.month};
+  if(recover){
+    body.amount='';
+  }else{
+    var v=$('adjAmount').value;
+    if(v.trim()==='')return toast('请输入调整金额，或点击"恢复自动"',1);
+    var n=Number(v);
+    if(isNaN(n)||n<0)return toast('请输入有效金额',1);
+    body.amount=n;
+  }
+  api('/api/salary/adjust',{method:'POST',body:JSON.stringify(body)}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    closeModal('adjMask');
+    toast(j.cleared?'已恢复自动计算':'已手动调整金额');
+    calcSalary();
+  });
+}
+
+/* ================= 结算单 ================= */
+function loadSettlePage(){
+  loadSettleTplList();
+  api('/api/cases').then(function(j){
+    var h='';
+    j.data.forEach(function(c){
+      var ready=c.settle_ready?1:0;
+      h+='<tr'+(ready?' class="settle-ready"':'')+'>'+
+        '<td><input type="checkbox" class="settleCk" value="'+c.id+'"'+(ready?' checked':'')+'></td>'+
+        '<td>'+esc(c.case_no)+'</td><td>'+esc(c.client_name)+'</td><td>'+esc(c.owner)+
+        '</td><td class="money">'+fmt(c.agent_fee)+'</td>'+
+        '<td>'+(ready?'<span class="tag ready">可结算</span>':'<span class="hint">未达标</span>')+'</td></tr>';
+    });
+    document.querySelector('#settleCaseTable tbody').innerHTML=h;
+    // 模板设计器「第2部分」预览案件下拉
+    var sel='<option value="">请选择案件（预览费用明细）</option>';
+    j.data.forEach(function(c){
+      sel+='<option value="'+c.id+'">'+esc(c.case_no)+' · '+esc(c.client_name)+'</option>';
+    });
+    if($('tplPrevCaseSel'))$('tplPrevCaseSel').innerHTML=sel;
+  });
+  loadSettleHistory();
+}
+
+/* ========== 历史结算记录 ========== */
+function loadSettleHistory(){
+  var month=$('settleHistoryMonth').value;
+  var kw=$('settleHistoryKw').value.trim();
+  var qs='';
+  if(month)qs+=(qs?'&':'?')+'month='+encodeURIComponent(month);
+  if(kw)qs+=(qs?'&':'?')+'kw='+encodeURIComponent(kw);
+  api('/api/settlements'+qs).then(function(j){
+    var h='';
+    j.data.forEach(function(s){
+      h+='<tr><td>'+esc(s.batch_no)+'</td><td>'+(s.created_at||'').substring(0,7)+
+        '</td><td><b>'+esc(s.case_no||'-')+'</b></td><td>'+esc(s.user_name||'-')+
+        '</td><td class="money">'+fmt(s.amount)+'</td><td>'+esc(s.created_by||'-')+
+        '</td><td>'+esc(s.created_at||'-')+'</td></tr>';
+    });
+    document.querySelector('#settleTable tbody').innerHTML=h||
+      '<tr><td colspan="7" class="empty">暂无记录</td></tr>';
+  });
+}
+function resetSettleHistory(){$('settleHistoryMonth').value='';$('settleHistoryKw').value='';loadSettleHistory()}
+function exportSettleHistory(){
+  var month=$('settleHistoryMonth').value;
+  var kw=$('settleHistoryKw').value.trim();
+  var qs='';
+  if(month)qs+=(qs?'&':'?')+'month='+encodeURIComponent(month);
+  if(kw)qs+=(qs?'&':'?')+'kw='+encodeURIComponent(kw);
+  api('/api/settlements/export'+qs).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    toast('已导出 '+j.count+' 条记录，开始下载');
+    var a=document.createElement('a');a.href=j.download;a.click();
+  });
+}
+
+/* ========== 结算页案件勾选 ========== */
+function toggleAllCases(cb){document.querySelectorAll('.settleCk').forEach(function(c){c.checked=cb.checked})}
+function checkAllReady(){
+  document.querySelectorAll('#settleCaseTable tr.settle-ready .settleCk').forEach(function(c){c.checked=true});
+  var n=document.querySelectorAll('#settleCaseTable tr.settle-ready').length;
+  toast('已勾选 '+n+' 件可结算案件');
+}
+/* 一键生成结算文档（合并）：批量勾选案件 → 每案输出《（ORG_NAME）案件结案审批表》
+   合并文档（审批表内容 + 模板配置薪酬结算单内容），打包 ZIP 文件流下载 */
+function genBundleSettlements(){
+  var ids=[];document.querySelectorAll('.settleCk:checked').forEach(function(c){ids.push(Number(c.value))});
+  if(!ids.length)return toast('请勾选案件',1);
+  var body={case_ids:ids};
+  var tid=$('settleTplSel').value;
+  if(tid)body.template_id=Number(tid);
+  showGenMask();
+  fetch('/api/generate-settlement',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){
+      if(!r.ok)return r.json().then(function(j){throw new Error(j.msg||'生成失败')});
+      return r.blob();
+    })
+    .then(function(blob){
+      hideGenMask();
+      var ts=new Date(),pad=function(n){return(n<10?'0':'')+n};
+      var stamp=''+ts.getFullYear()+pad(ts.getMonth()+1)+pad(ts.getDate())+
+        pad(ts.getHours())+pad(ts.getMinutes())+pad(ts.getSeconds());
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);
+      a.download='结算文档_'+stamp+'.zip';
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);
+      toast('已生成 '+ids.length+' 份（ORG_NAME）案件结案审批表，开始下载');
+    })
+    .catch(function(e){
+      hideGenMask();toast(e.message||'生成失败，请稍后重试',1);
+    });
+}
+function showGenMask(){
+  if(document.getElementById('settleGenMask'))return;
+  var m=document.createElement('div');
+  m.id='settleGenMask';
+  m.style.cssText='position:fixed;inset:0;z-index:9999;background:rgba(255,255,255,0.78);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:14px;font-size:15px;color:#333';
+  m.innerHTML='<style>@keyframes settleSpin{to{transform:rotate(360deg)}}</style>'+
+    '<div style="width:38px;height:38px;border:3px solid #d9d9d9;border-top-color:#3a7afe;border-radius:50%;animation:settleSpin 0.9s linear infinite"></div>'+
+    '<div>正在生成结算文档...</div>';
+  document.body.appendChild(m);
+}
+function hideGenMask(){var m=document.getElementById('settleGenMask');if(m)m.remove()}
+
+/* ================= 结算模板设计器（四部分结构） ================= */
+/* 第1部分：案件基本信息 8 字段（key 对应 cases 表字段） */
+var APPROVAL_P1_FIELDS=[
+  {key:'plaintiff',label:'原告'}, {key:'defendant',label:'被告'},
+  {key:'section',label:'板块'}, {key:'case_cause',label:'案由'},
+  {key:'subject_amount',label:'标的'}, {key:'project',label:'项目'},
+  {key:'fee_standard',label:'收益标准'}, {key:'expected_profit',label:'预期收益'}
+];
+/* 合并薪酬结算单部分可配置字段 */
+var SETTLE_CFG_FIELDS=[
+  {key:'case_no',label:'案号'}, {key:'client_name',label:'客户名称'},
+  {key:'developer',label:'案件开发人'}, {key:'owner',label:'负责人'},
+  {key:'members',label:'小组成员'}, {key:'agent_fee',label:'代理费金额'},
+  {key:'court_fee_advance',label:'代垫诉讼费'}, {key:'invoice_amount',label:'开票金额'}
+];
+var TPL_P1=[], TPL_CFG_SEL=[], TPL_FEE_ROWS=[], TPL_PREV_CASE='';
+function roundHalfUp(v){return Math.round((Number(v)+0.0000001)*100)/100}
+
+function loadSettleTplList(){
+  if(!can('settle.view'))return;
+  api('/api/templates').then(function(j){
+    var opts='',defId=0,h='';
+    j.data.forEach(function(t){
+      var isDef=t.is_default?1:0;
+      if(isDef&&!defId)defId=t.id;
+      opts+='<option value="'+t.id+'"'+(isDef?' selected':'')+'>'+esc(t.name)+(isDef?'（默认）':'')+'</option>';
+      var fc=(t.fields||[]).filter(function(f){return f.visible!==false}).length;
+      h+='<tr><td>'+esc(t.name)+(t.is_system?' <span class="tag doing">系统内置</span>':'')+'</td>'+
+        '<td>'+(isDef?'<span class="tag ready">默认</span>':'')+'</td><td>'+fc+'</td>'+
+        '<td>'+esc(t.updated_by||'-')+'</td><td>'+esc(t.updated_at||'-')+'</td><td>'+
+        '<button class="btn sm" onclick="openTplModal('+t.id+')">编辑</button> '+
+        (isDef?'':'<button class="btn sm" onclick="setDefaultTpl('+t.id+')">设为默认</button> ')+
+        (t.is_system
+          ?'<button class="btn sm danger" disabled title="系统内置模板禁止删除">删除</button>'
+          :'<button class="btn sm danger" onclick="delTpl('+t.id+')">删除</button>')+
+        '</td></tr>';
+    });
+    $('settleTplSel').innerHTML=opts||'<option value="">默认模板</option>';
+    document.querySelector('#tplTable tbody').innerHTML=h||'<tr><td colspan="6" class="empty">暂无模板，点击「新建模板」创建</td></tr>';
+    $('btnTplNew').style.display=can('settle.edit')?'':'none';
+  });
+}
+function openTplModal(id){
+  TPL_P1=APPROVAL_P1_FIELDS.map(function(f){return {key:f.key,label:f.label,visible:true}});
+  TPL_CFG_SEL=SETTLE_CFG_FIELDS.map(function(f){return {key:f.key,label:f.label,checked:true}});
+  TPL_FEE_ROWS=[];TPL_PREV_CASE='';
+  $('tplModalTitle').textContent='新建结算模板（（ORG_NAME）案件结案审批表）';
+  $('tplId').value='';$('tplName').value='';
+  $('tplTitle').value='（ORG_NAME）案件结案审批表';
+  $('tplHandlerRate').value=5;$('tplMaintainerRate').value=8;
+  $('tplShowBatch').checked=true;$('tplShowDate').checked=true;$('tplShowUser').checked=false;
+  $('tplFooter').value='财务经理签字：______________    领款人签字：______________';
+  if(id){editTpl(id);return}
+  renderTplPart1();renderTplCfgFields();
+  $('tplPrevCaseSel').value='';
+  renderTplFeeRows();tplCalcPreview();renderTplSign();
+  $('tplMask').style.display='flex';
+}
+function editTpl(id){
+  api('/api/templates').then(function(j){
+    var t=null;j.data.forEach(function(x){if(x.id===id)t=x});
+    if(!t)return toast('模板不存在',1);
+    $('tplModalTitle').textContent='编辑结算模板';
+    $('tplId').value=t.id;$('tplName').value=t.name;
+    $('tplTitle').value=t.title||'（ORG_NAME）案件结案审批表';
+    var cc=t.commission_config||{};
+    $('tplHandlerRate').value=cc.handler_rate!=null?cc.handler_rate:5;
+    $('tplMaintainerRate').value=cc.maintainer_rate!=null?cc.maintainer_rate:8;
+    var cfg=t.config||{};
+    $('tplShowBatch').checked=cfg.show_batch!==false;
+    $('tplShowDate').checked=cfg.show_date!==false;
+    $('tplShowUser').checked=!!cfg.show_user;
+    $('tplFooter').value=cfg.footer||'财务经理签字：______________    领款人签字：______________';
+    TPL_P1=APPROVAL_P1_FIELDS.map(function(f){
+      var m=null;(t.fields||[]).forEach(function(x){if(x.key===f.key)m=x});
+      return {key:f.key,label:f.label,visible:m?m.visible!==false:true};
+    });
+    var used=[];TPL_CFG_SEL=[];
+    (cfg.fields||[]).forEach(function(f){
+      var m=null;SETTLE_CFG_FIELDS.forEach(function(x){if(x.key===f.key)m=x});
+      if(m){TPL_CFG_SEL.push({key:m.key,label:m.label,checked:true});used.push(f.key)}
+    });
+    SETTLE_CFG_FIELDS.forEach(function(f){
+      if(used.indexOf(f.key)<0)TPL_CFG_SEL.push({key:f.key,label:f.label,checked:false});
+    });
+    TPL_FEE_ROWS=[];TPL_PREV_CASE='';
+    renderTplPart1();renderTplCfgFields();
+    $('tplPrevCaseSel').value='';
+    renderTplFeeRows();tplCalcPreview();renderTplSign();
+    $('tplMask').style.display='flex';
+  });
+}
+/* ---- 第1部分：案件基本信息 8 字段勾选 + 排序 ---- */
+function renderTplPart1(){
+  var h='';
+  TPL_P1.forEach(function(f,i){
+    h+='<label style="display:inline-flex;align-items:center;gap:6px;padding:4px 10px;border:1px solid '+
+      (f.visible?'#3a7afe':'var(--kd-border)')+';border-radius:4px;font-size:13px;background:'+
+      (f.visible?'#f0f5ff':'#fafbfd')+'">'+
+      '<input type="checkbox" style="width:auto"'+(f.visible?' checked':'')+
+      ' onchange="tplP1Toggle('+i+',this.checked)">'+esc(f.label)+
+      '<a style="color:#3a7afe;cursor:pointer;font-size:12px" onclick="tplP1Move('+i+',-1)">↑</a>'+
+      '<a style="color:#3a7afe;cursor:pointer;font-size:12px" onclick="tplP1Move('+i+',1)">↓</a></label>';
+  });
+  $('tplPart1Fields').innerHTML=h;
+}
+function tplP1Toggle(i,v){TPL_P1[i].visible=v;renderTplPart1()}
+function tplP1Move(i,d){var j=i+d;if(j<0||j>=TPL_P1.length)return;
+  var t=TPL_P1[i];TPL_P1[i]=TPL_P1[j];TPL_P1[j]=t;renderTplPart1()}
+function getPart1Fields(){
+  return TPL_P1.map(function(f,i){
+    return {key:f.key,label:f.label,visible:!!f.visible,sort_order:i};
+  });
+}
+/* ---- 结算单部分字段勾选 ---- */
+function renderTplCfgFields(){
+  var h='';
+  TPL_CFG_SEL.forEach(function(f,i){
+    h+='<label style="display:inline-flex;align-items:center;gap:5px;padding:3px 8px;border:1px solid var(--kd-border);border-radius:4px;font-size:13px;background:#fafbfd">'+
+      '<input type="checkbox" style="width:auto"'+(f.checked?' checked':'')+
+      ' onchange="tplCfgToggle('+i+',this.checked)">'+esc(f.label)+'</label>';
+  });
+  $('tplSettleCfgFields').innerHTML=h;
+}
+function tplCfgToggle(i,v){TPL_CFG_SEL[i].checked=v;renderTplCfgFields()}
+/* ---- 第2部分：费用明细录入（保存到所选案件）+ 收益/提成实时预览 ---- */
+function tplLoadFeeRows(){
+  var cid=$('tplPrevCaseSel').value;
+  TPL_PREV_CASE=cid;
+  if(!cid){TPL_FEE_ROWS=[];renderTplFeeRows();tplCalcPreview();return}
+  api('/api/cases/'+cid+'/fee-details').then(function(j){
+    TPL_FEE_ROWS=(j.data||[]).map(function(r){
+      return {id:r.id,fee_date:r.fee_date,description:r.description,amount:Number(r.amount||0)};
+    });
+    renderTplFeeRows();tplCalcPreview();
+  });
+}
+function renderTplFeeRows(){
+  var h='';
+  TPL_FEE_ROWS.forEach(function(r,i){
+    var neg=Number(r.amount)<0;
+    h+='<tr><td>'+esc(r.fee_date)+'</td><td>'+esc(r.description)+'</td>'+
+      '<td class="money"'+(neg?' style="color:#e02e2e"':'')+'>'+fmt(r.amount)+'</td><td>'+
+      '<button class="btn sm danger" onclick="tplDelFeeRow('+i+')">删除</button></td></tr>';
+  });
+  $('tplFeeTable').querySelector('tbody').innerHTML=h||
+    '<tr><td colspan="4" class="empty">暂无费用明细：选择「预览案件」加载已有明细，或直接添加新明细</td></tr>';
+}
+function tplAddFeeRow(){
+  var cid=$('tplPrevCaseSel').value;
+  if(!cid)return toast('请先选择案件（第2部分「选择案件」下拉）',1);
+  var d={fee_date:$('tplFeeDate').value,description:$('tplFeeItem').value,amount:$('tplFeeAmount').value};
+  if(!d.description)return toast('请填写款项说明',1);
+  if(d.amount===''||isNaN(Number(d.amount)))return toast('请填写金额',1);
+  api('/api/cases/'+cid+'/fee-details',{method:'POST',body:JSON.stringify(d)}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    $('tplFeeItem').value='';$('tplFeeAmount').value='';toast('已添加费用明细');tplLoadFeeRows();
+  });
+}
+function tplDelFeeRow(i){
+  var r=TPL_FEE_ROWS[i];if(!r)return;
+  if(r.id){
+    var cid=$('tplPrevCaseSel').value;
+    api('/api/cases/'+cid+'/fee-details/'+r.id,{method:'DELETE'}).then(function(j){
+      if(!j.ok)return toast(j.msg,1);toast('已删除');tplLoadFeeRows();
+    });
+  }else{
+    TPL_FEE_ROWS.splice(i,1);renderTplFeeRows();tplCalcPreview();
+  }
+}
+function tplCalcPreview(){
+  var income=0,expense=0;
+  TPL_FEE_ROWS.forEach(function(r){
+    var a=Number(r.amount||0);
+    if(a>=0){income+=a}else{expense+=-a}
+  });
+  var profit=income-expense;
+  var formula;
+  if(!TPL_FEE_ROWS.length){
+    formula='本案收益为 ______ 元（暂未录入费用明细）';
+  }else{
+    var parts=TPL_FEE_ROWS.map(function(r){
+      var a=Number(r.amount||0);
+      return (a<0?'-':'+')+Math.abs(a).toFixed(2);
+    });
+    formula='本案收益为 '+parts.join(' ').replace(/^\+/,'')+'='+profit.toFixed(2)+' 元';
+  }
+  var hr=Number($('tplHandlerRate').value||0),mr=Number($('tplMaintainerRate').value||0);
+  function calcLine(rate,gua,fixed){
+    var base=roundHalfUp(profit*rate/100);
+    var maxed=Math.max(base,gua);
+    var amt=roundHalfUp(maxed+fixed);
+    return '数额 = max(回款金额 × 提成率, 保底金额) + 固定金额<br>'+
+      '&nbsp;&nbsp;= max('+profit.toFixed(2)+' × '+rate+'%, '+gua.toFixed(2)+') + '+fixed.toFixed(2)+'<br>'+
+      '&nbsp;&nbsp;= max('+base.toFixed(2)+', '+gua.toFixed(2)+') + '+fixed.toFixed(2)+'<br>'+
+      '&nbsp;&nbsp;= '+maxed.toFixed(2)+' + '+fixed.toFixed(2)+'<br>'+
+      '&nbsp;&nbsp;= <b class="money">¥ '+amt.toFixed(2)+'</b>（四舍五入取整）';
+  }
+  /* 保底/固定预览用角色默认：承办 600 / 维护 0；生成文档时按案件成员实际配置带入 */
+  var hGua=600,hFixed=0,mGua=0,mFixed=0;
+  $('tplProfitBox').innerHTML='<div class="conflict-tip" style="display:block">'+
+    '<b>收益计算：</b>'+formula+'<br>'+
+    '<b>提成预览（承办人 '+hr+'%）：</b><br>'+calcLine(hr,hGua,hFixed)+'<br>'+
+    '<b>提成预览（维护人 '+mr+'%）：</b><br>'+calcLine(mr,mGua,mFixed)+
+    '<div class="hint" style="margin-top:4px">保底/固定金额以案件成员配置为准（默认承办 600、维护 0），生成文档时自动带入实际值。</div></div>';
+}
+/* ---- 第3部分：审批意见预览（姓名生成时自动带入，日期留白待手填，与生成文档一致） ---- */
+function renderTplSign(){
+  $('tplSignPreview').innerHTML=
+    '维护人：____________　　____年__月__日<br>'+
+    '审批意见：____________　　财务主管：____________　　____年__月__日<br>'+
+    '执行主任：____________　　____年__月__日';
+}
+/* ---- 保存 / 预览 Word / 默认 / 删除 ---- */
+function buildTplBody(){
+  var title=$('tplTitle').value.trim()||'（ORG_NAME）案件结案审批表';
+  var cfgFields=TPL_CFG_SEL.filter(function(f){return f.checked}).map(function(f){return {key:f.key,label:f.label}});
+  return {
+    type:'case_approval',title:title,
+    fields:getPart1Fields(),
+    commission_config:{handler_rate:Number($('tplHandlerRate').value||0),
+      maintainer_rate:Number($('tplMaintainerRate').value||0)},
+    config:{title:title,type:'close_approval',
+      show_batch:$('tplShowBatch').checked,show_date:$('tplShowDate').checked,show_user:$('tplShowUser').checked,
+      fields:cfgFields,
+      footer:$('tplFooter').value||'财务经理签字：______________    领款人签字：______________'}
+  };
+}
+function saveTpl(){
+  var name=$('tplName').value.trim();if(!name)return toast('请填写模板名称',1);
+  var id=$('tplId').value;
+  var url=id?('/api/templates/'+id):'/api/templates';
+  api(url,{method:id?'PUT':'POST',body:JSON.stringify(buildTplBody())}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    closeModal('tplMask');toast(id?'模板已更新':'模板已保存');loadSettleTplList();
+  });
+}
+function tplPreviewWord(){
+  var body=buildTplBody();
+  var cid=$('tplPrevCaseSel').value;
+  if(cid)body.case_id=Number(cid);
+  toast('正在生成预览 Word…');
+  fetch('/api/templates/preview',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)})
+    .then(function(r){
+      if(!r.ok)return r.json().then(function(j){throw new Error(j.msg||'预览失败')});
+      return r.blob();
+    })
+    .then(function(blob){
+      var a=document.createElement('a');
+      a.href=URL.createObjectURL(blob);a.download='（ORG_NAME）案件结案审批表_预览.docx';
+      document.body.appendChild(a);a.click();
+      setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},1000);
+      toast('预览文档已生成，开始下载');
+    })
+    .catch(function(e){toast(e.message||'预览失败',1)});
+}
+function setDefaultTpl(id){
+  api('/api/templates/'+id+'/set-default',{method:'PUT'}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);toast('已设为默认模板');loadSettleTplList()});
+}
+function delTpl(id){
+  if(!confirm('确定删除该结算模板？'))return;
+  api('/api/templates/'+id,{method:'DELETE'}).then(function(j){
+    toast(j.ok?'已删除':j.msg,!j.ok);loadSettleTplList()});
+}
+
+/* ================= 财务信息：费用收回（案件弹窗内录入） ================= */
+function loadRecoveryFin(){
+  var cid=$('cId').value;
+  if(!cid){$('recFinEditor').style.display='none';
+    $('recFinTable').querySelector('tbody').innerHTML='';return;}
+  $('recFinEditor').style.display='';
+  api('/api/cases/'+cid+'/recoveries').then(function(j){
+    var h='';
+    (j.data||[]).forEach(function(r){
+      var amt=Number(r.amount||0);
+      h+='<tr><td>'+esc(r.recovery_date)+'</td><td>'+esc(r.item)+'</td>'+
+        '<td class="money">'+fmt(amt)+'</td>'+
+        '<td><button class="btn sm danger" onclick="delRecoveryFin('+r.id+')">删除</button></td></tr>';
+    });
+    $('recFinTable').querySelector('tbody').innerHTML=h||'<tr><td colspan="4" class="empty">暂无费用收回明细</td></tr>';
+  });
+}
+function addRecoveryFin(){
+  var cid=$('cId').value;if(!cid)return toast('请先保存案件',1);
+  var d={recovery_date:$('recFinDate').value,item:$('recFinItem').value,amount:$('recFinAmount').value};
+  if(!d.item)return toast('请填写款项说明',1);
+  if(!d.amount)return toast('请填写金额',1);
+  api('/api/cases/'+cid+'/recoveries',{method:'POST',body:JSON.stringify(d)}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    $('recFinItem').value='';$('recFinAmount').value='';toast('已添加');loadRecoveryFin();
+  });
+}
+function delRecoveryFin(id){
+  var cid=$('cId').value;if(!cid)return;
+  api('/api/cases/'+cid+'/recoveries/'+id,{method:'DELETE'}).then(function(j){
+    toast(j.ok?'已删除':j.msg,!j.ok);loadRecoveryFin()});
+}
+
+/* ================= 导入 ================= */
+function importCases(){
+  var f=$('importFile').files[0];if(!f)return toast('请选择 Excel/CSV 文件',1);
+  var fd=new FormData();fd.append('file',f);
+  var tid=$('caseImportTpl').value;if(tid)fd.append('template_id',tid);
+  fetch('/api/cases/import',{method:'POST',body:fd}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    var h='<div class="hint">导入完成：新增 <b>'+j.inserted+'</b> 条，跳过重复/空行 <b>'+j.skipped+'</b> 条。';
+    if(j.errors&&j.errors.length)h+='<br>错误明细：<br>'+j.errors.map(esc).join('<br>');
+    $('importResult').innerHTML=h+'</div>';toast('导入完成');
+  });
+}
+
+/* ================= 数据信息库（综合查阅） ================= */
+function loadDataLibrary(){
+  var type=$('libType').value, kw=$('libKw').value||'';
+  api('/api/data-library?type='+type+'&kw='+encodeURIComponent(kw)).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    var data=j.data||[];
+    var head='',body='';
+    var cols={
+      'case':['案号','客户名称','负责人','开发人','状态','代理费(¥)','开票(¥)','归档'],
+      'staff':['工号','姓名','部门','岗位','入职日期','电话','状态'],
+      'customer':['客户名称','信用代码','联系人','电话','类型','行业','地址'],
+      'invoice':['发票号码','类型','购买方','项目名称','价税合计(¥)','税额(¥)','科目','日期','状态'],
+      'finance':['案号','客户','日期','款项说明','金额(¥)']
+    };
+    head='<tr>'+(cols[type]||[]).map(function(c){return '<th>'+c+'</th>'}).join('')+'</tr>';
+    data.forEach(function(r){
+      if(type==='case'){
+        body+='<tr><td>'+esc(r.case_no)+'</td><td>'+esc(r.client_name)+'</td><td>'+esc(r.owner)+
+          '</td><td>'+esc(r.developer)+'</td><td>'+esc(r.status)+'</td>'+
+          '<td class="money">'+fmt(r.agent_fee)+'</td><td class="money">'+fmt(r.invoice_amount)+
+          '</td><td>'+esc(r.archive_status||'')+'</td></tr>';
+      }else if(type==='staff'){
+        body+='<tr><td>'+esc(r.staff_no)+'</td><td>'+esc(r.name)+'</td><td>'+esc(r.department)+
+          '</td><td>'+esc(r.position)+'</td><td>'+esc(r.hire_date)+'</td><td>'+esc(r.phone)+
+          '</td><td>'+esc(r.status)+'</td></tr>';
+      }else if(type==='customer'){
+        body+='<tr><td>'+esc(r.name)+'</td><td>'+esc(r.credit_code)+'</td><td>'+esc(r.contact)+
+          '</td><td>'+esc(r.phone)+'</td><td>'+esc(r.cust_type)+'</td><td>'+esc(r.industry)+
+          '</td><td>'+esc(r.address)+'</td></tr>';
+      }else if(type==='invoice'){
+        body+='<tr><td>'+esc(r.invoice_no)+'</td><td>'+(r.invoice_type?'<span class="tag '+((r.invoice_type||'').indexOf('专')>=0?'red':'')+'">'+esc(r.invoice_type)+'</span>':'')+'</td><td>'+esc(r.client_name||r.seller)+'</td><td>'+esc(r.item_name||'')+'</td>'+
+          '<td class="money">'+fmt(r.amount)+'</td><td>'+fmt(r.tax_amount)+'</td>'+
+          '<td>'+esc(r.category)+'</td><td>'+esc(r.invoice_date)+'</td>'+
+          '<td>'+(r.confirm?'已确认':'待确认')+'</td></tr>';
+      }else if(type==='finance'){
+        body+='<tr><td>'+esc(r.case_no)+'</td><td>'+esc(r.client_name)+'</td><td>'+esc(r.recovery_date)+
+          '</td><td>'+esc(r.item)+'</td><td class="money">'+fmt(r.amount)+'</td></tr>';
+      }
+    });
+    $('libHead').innerHTML=head;
+    document.querySelector('#libTable tbody').innerHTML=body||'<tr><td colspan="8" class="empty">暂无数据</td></tr>';
+  });
+}
+
+/* ================= 导入模板管理 ================= */
+var IT_FIELDS={};
+function loadImportTplList(){
+  if(!can('file.import'))return;
+  api('/api/import/templates').then(function(j){
+    var h='';
+    j.data.forEach(function(t){
+      var map=t.mapping||{};
+      var keys=Object.keys(map);
+      var mapText=keys.map(function(k){return esc(k)+'→'+esc(map[k])}).join('，');
+      h+='<tr><td>'+esc(t.name)+'</td><td>'+esc(t.entity_name)+'</td><td class="hint">'+mapText+'</td>'+
+        '<td>'+esc(t.created_by)+'</td><td>'+
+        '<button class="btn sm danger" onclick="delImportTpl('+t.id+')">删除</button></td></tr>';
+    });
+    document.querySelector('#impTplTable tbody').innerHTML=h||'<tr><td colspan="5" class="empty">暂无导入模板</td></tr>';
+    // 各导入区下拉
+    var caseOpts='<option value="">自动匹配表头</option>',staffOpts='<option value="">自动匹配表头</option>',custOpts='<option value="">自动匹配表头</option>';
+    j.data.forEach(function(t){
+      var o='<option value="'+t.id+'">'+esc(t.name)+'</option>';
+      if(t.entity==='case')caseOpts+=o;
+      else if(t.entity==='staff')staffOpts+=o;
+      else if(t.entity==='customer')custOpts+=o;
+    });
+    $('caseImportTpl').innerHTML=caseOpts;
+    $('staffImportTpl').innerHTML=staffOpts;
+    $('customerImportTpl').innerHTML=custOpts;
+  });
+}
+function openImportTplModal(){
+  $('itName').value='';$('itEntity').value='case';
+  $('itMapRows').innerHTML='';
+  itEntityChange();
+  $('impTplMask').style.display='flex';
+}
+function itEntityChange(){
+  var entity=$('itEntity').value;
+  api('/api/import/fields/'+entity).then(function(j){
+    IT_FIELDS=j.fields||[];
+    $('itMapRows').innerHTML='';
+    itAddRow();
+  });
+}
+function itAddRow(){
+  var fieldsHtml='<option value="">请选择系统字段</option>';
+  IT_FIELDS.forEach(function(f){
+    fieldsHtml+='<option value="'+f.key+'">'+esc(f.label)+(f.required?' *':'')+'</option>';
+  });
+  var div=document.createElement('div');
+  div.className='map-row';
+  div.innerHTML='<input class="map-src" style="flex:1" placeholder="文件中的列名，如：客户名称">'+
+    '<select class="map-dst" style="flex:1">'+fieldsHtml+'</select>'+
+    '<button class="btn sm danger" style="flex:none" onclick="this.parentNode.remove()">删除</button>';
+  $('itMapRows').appendChild(div);
+}
+function saveImportTpl(){
+  var name=$('itName').value.trim();if(!name)return toast('请填写模板名称',1);
+  var entity=$('itEntity').value;
+  var mapping={};
+  document.querySelectorAll('#itMapRows .map-row').forEach(function(r){
+    var src=r.querySelector('.map-src').value.trim();
+    var dst=r.querySelector('.map-dst').value;
+    if(src&&dst)mapping[src]=dst;
+  });
+  if(!Object.keys(mapping).length)return toast('请至少配置一个字段映射',1);
+  api('/api/import/templates',{method:'POST',body:JSON.stringify({name:name,entity:entity,mapping:mapping})})
+    .then(function(j){
+      if(!j.ok)return toast(j.msg,1);
+      closeModal('impTplMask');toast('导入模板已保存');loadImportTplList();
+    });
+}
+function delImportTpl(id){
+  if(!confirm('确定删除该导入模板？'))return;
+  api('/api/import/templates/'+id,{method:'DELETE'}).then(function(j){
+    toast(j.ok?'已删除':j.msg,!j.ok);loadImportTplList()});
+}
+
+/* ================= 花名册 ================= */
+var _editStaffId=null;
+function loadStaff(){
+  api('/api/staff?kw='+encodeURIComponent($('staffKw').value||'')).then(function(j){
+    var h='';j.data.forEach(function(s){
+      var rate=Number(s.commission_rate||0);
+      h+='<tr><td>'+esc(s.staff_no)+'</td><td>'+esc(s.name)+'</td><td>'+esc(s.department)+
+        '</td><td>'+esc(s.position)+'</td><td>'+esc(s.hire_date)+'</td><td>'+esc(s.phone)+
+        '</td><td>'+(rate?'<span class="tag doing">'+(rate*100).toFixed(2)+'%</span>':'-')+'</td>'+
+        '<td><span class="tag '+(s.status==='在职'?'done':'red')+'">'+esc(s.status)+'</span></td><td>'+
+        (can('case.edit')?'<button class="btn sm" onclick="editStaff('+s.id+')">编辑</button> '+
+        '<button class="btn sm danger" onclick="delStaff('+s.id+')">删除</button>':'')+'</td></tr>';
+    });
+    document.querySelector('#staffTable tbody').innerHTML=h||'<tr><td colspan="9" class="empty">暂无人员</td></tr>';
+    $('btnStaffSave').style.display=can('case.edit')?'':'none';
+  });
+}
+function saveStaff(){
+  if(!can('case.edit'))return toast('无权限',1);
+  var d={staff_no:$('stNo').value,name:$('stName').value,department:$('stDept').value,
+    position:$('stPos').value,hire_date:$('stHire').value,phone:$('stPhone').value,
+    id_card:$('stIdcard').value,status:$('stStatus').value,
+    commission_rate:$('stRate').value,remark:$('stRemark').value};
+  if(!d.name)return toast('请填写姓名',1);
+  var url=_editStaffId?('/api/staff/'+_editStaffId):'/api/staff';
+  var method=_editStaffId?'PUT':'POST';
+  api(url,{method:method,body:JSON.stringify(d)}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    toast(_editStaffId?'已更新':'已保存');_editStaffId=null;
+    ['stNo','stName','stDept','stPos','stHire','stPhone','stIdcard','stRate','stRemark'].forEach(function(i){$(i).value=''});
+    loadStaff();
+  });
+}
+function editStaff(id){
+  api('/api/staff').then(function(j){
+    var s=null;j.data.forEach(function(x){if(x.id===id)s=x});
+    if(!s)return;
+    _editStaffId=id;
+    $('stNo').value=s.staff_no;$('stName').value=s.name;$('stDept').value=s.department;
+    $('stPos').value=s.position;$('stHire').value=s.hire_date;$('stPhone').value=s.phone;
+    $('stIdcard').value=s.id_card;$('stStatus').value=s.status;
+    $('stRate').value=s.commission_rate||'';$('stRemark').value=s.remark;
+    toast('已载入编辑，修改后点「保存人员」');
+  });
+}
+function batchSetRate(){
+  if(!can('case.edit'))return toast('无权限',1);
+  var dept=$('batchRateDept').value.trim(), rate=$('batchRateVal').value;
+  if(!dept)return toast('请填写部门',1);
+  if(rate==='')return toast('请填写提成率',1);
+  api('/api/staff/batch-rate',{method:'POST',body:JSON.stringify({department:dept,rate:Number(rate)})})
+    .then(function(j){
+      if(!j.ok)return toast(j.msg,1);
+      toast('已为「'+dept+'」部门 '+j.count+' 人设置提成率 '+(Number(rate)*100)+'%');
+      loadStaff();
+    });
+}
+function delStaff(id){
+  if(!confirm('确定删除该人员？'))return;
+  api('/api/staff/'+id,{method:'DELETE'}).then(function(j){
+    toast(j.ok?'已删除':j.msg,!j.ok);loadStaff()});
+}
+function importStaff(){
+  var f=$('staffImportFile').files[0];if(!f)return toast('请选择 Excel/CSV 文件',1);
+  var fd=new FormData();fd.append('file',f);
+  var tid=$('staffImportTpl').value;if(tid)fd.append('template_id',tid);
+  fetch('/api/staff/import',{method:'POST',body:fd}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    var h='<div class="hint">导入完成：新增 <b>'+j.inserted+'</b> 条，跳过重复/空行 <b>'+j.skipped+'</b> 条。';
+    if(j.errors&&j.errors.length)h+='<br><b>错误明细（'+j.total_errors+' 条）：</b><br>'+j.errors.map(esc).join('<br>');
+    $('staffImportResult').innerHTML=h+'</div>';toast('导入完成');loadStaff();
+  });
+}
+
+/* ================= 客户信息 ================= */
+var _editCustId=null;
+function loadCustomers(){
+  api('/api/customers?kw='+encodeURIComponent($('customerKw').value||'')).then(function(j){
+    var h='';j.data.forEach(function(c){
+      h+='<tr><td>'+esc(c.name)+'</td><td>'+esc(c.credit_code)+'</td><td>'+esc(c.contact)+
+        '</td><td>'+esc(c.phone)+'</td><td>'+esc(c.cust_type)+'</td><td>'+esc(c.industry)+'</td><td>'+
+        (can('case.edit')?'<button class="btn sm" onclick="editCustomer('+c.id+')">编辑</button> '+
+        '<button class="btn sm danger" onclick="delCustomer('+c.id+')">删除</button>':'')+'</td></tr>';
+    });
+    document.querySelector('#customerTable tbody').innerHTML=h||'<tr><td colspan="7" class="empty">暂无客户</td></tr>';
+    $('btnCustSave').style.display=can('case.edit')?'':'none';
+  });
+}
+function saveCustomer(){
+  if(!can('case.edit'))return toast('无权限',1);
+  var d={name:$('cuName').value,credit_code:$('cuCredit').value,contact:$('cuContact').value,
+    phone:$('cuPhone').value,cust_type:$('cuType').value,industry:$('cuIndustry').value,
+    address:$('cuAddr').value,remark:$('cuRemark').value};
+  if(!d.name)return toast('请填写客户名称',1);
+  var url=_editCustId?('/api/customers/'+_editCustId):'/api/customers';
+  var method=_editCustId?'PUT':'POST';
+  api(url,{method:method,body:JSON.stringify(d)}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    toast(_editCustId?'已更新':'已保存');_editCustId=null;
+    ['cuName','cuCredit','cuContact','cuPhone','cuIndustry','cuAddr','cuRemark'].forEach(function(i){$(i).value=''});
+    loadCustomers();
+  });
+}
+function editCustomer(id){
+  api('/api/customers').then(function(j){
+    var c=null;j.data.forEach(function(x){if(x.id===id)c=x});
+    if(!c)return;
+    _editCustId=id;
+    $('cuName').value=c.name;$('cuCredit').value=c.credit_code;$('cuContact').value=c.contact;
+    $('cuPhone').value=c.phone;$('cuType').value=c.cust_type;$('cuIndustry').value=c.industry;
+    $('cuAddr').value=c.address;$('cuRemark').value=c.remark;
+    toast('已载入编辑，修改后点「保存客户」');
+  });
+}
+function delCustomer(id){
+  if(!confirm('确定删除该客户？'))return;
+  api('/api/customers/'+id,{method:'DELETE'}).then(function(j){
+    toast(j.ok?'已删除':j.msg,!j.ok);loadCustomers()});
+}
+function importCustomers(){
+  var f=$('customerImportFile').files[0];if(!f)return toast('请选择 Excel/CSV 文件',1);
+  var fd=new FormData();fd.append('file',f);
+  var tid=$('customerImportTpl').value;if(tid)fd.append('template_id',tid);
+  fetch('/api/customers/import',{method:'POST',body:fd}).then(function(r){return r.json()}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    var h='<div class="hint">导入完成：新增 <b>'+j.inserted+'</b> 条，跳过重复/空行 <b>'+j.skipped+'</b> 条。';
+    if(j.errors&&j.errors.length)h+='<br><b>错误明细（'+j.total_errors+' 条）：</b><br>'+j.errors.map(esc).join('<br>');
+    $('customerImportResult').innerHTML=h+'</div>';toast('导入完成');loadCustomers();
+  });
+}
+
+/* ================= 发票 ================= */
+function loadOcrStatus(){
+  if(!can('invoice.edit'))return;
+  api('/api/ocr/status').then(function(j){
+    if(!j.ok)return;
+    var h;
+    if(j.available){
+      h='<span class="tag done" style="padding:4px 10px">本地 OCR 已就绪</span> '+
+        '<span class="hint">'+esc(j.detail||'')+'</span>';
+    }else{
+      h='<span class="tag red" style="padding:4px 10px">本地 OCR 依赖未安装</span> '+
+        '<button class="btn sm primary" onclick="ocrSetup()">自动配置依赖</button> '+
+        '<span class="hint">'+esc(j.detail||'')+'</span>';
+    }
+    $('ocrStatus').innerHTML=h;
+  });
+}
+function ocrSetup(){
+  toast('正在安装本地 OCR 依赖（约需 1-3 分钟，请稍候）...');
+  var btn=event&&event.target;
+  api('/api/ocr/setup',{method:'POST',body:JSON.stringify({})}).then(function(j){
+    if(j.ok){toast('本地 OCR 依赖已安装完成，可离线使用');loadOcrStatus();}
+    else{toast(j.msg||'安装失败',1);if(j.detail)console.log(j.detail);}
+  }).catch(function(e){toast(e.friendlyMsg||'安装请求失败',1)});
+}
+function ocrRecognize(){
+  var f=$('ocrFile').files[0];if(!f)return toast('请上传发票图片或 PDF',1);
+  $('btnOcr').disabled=true;$('btnOcr').textContent='本地识别中...';
+  var fd=new FormData();fd.append('file',f);
+  var cno=$('ocrCaseNo').value.trim();if(cno)fd.append('case_no',cno);
+  fetch('/api/invoices/ocr-recognize',{method:'POST',body:fd}).then(function(r){return r.json()}).then(function(j){
+    $('btnOcr').disabled=false;$('btnOcr').textContent='本地 OCR 识别';
+    if(!j.ok){
+      if(j.need_setup){toast(j.msg,1);loadOcrStatus();}
+      else toast(j.msg,1);
+      return;
+    }
+    var d=j.data;
+    $('ocrResult').innerHTML='<div class="hint">本地识别成功并已登记台账：发票号码 <b>'+esc(d.invoice_no)+
+      '</b>，发票类型 '+(d.invoice_type?'<span class="tag '+((d.invoice_type||'').indexOf('专')>=0?'red':'')+'">'+esc(d.invoice_type)+'</span>':'未识别')+
+      '，购买方（客户名称）'+esc(d.client_name||'')+(d.review_flag?' <span class="tag red" title="'+esc(d.review_note||'')+'">销售方待核对</span>':'')+'，价税合计 <span class="money">¥ '+fmt(d.amount)+
+      '</span>，税额 ¥ '+fmt(d.tax_amount)+'，开票日期 '+esc(d.invoice_date)+
+      '，项目名称 '+esc(d.item_name||'—')+'，自动归集科目：<span class="tag doing">'+esc(d.category)+'</span>（数据未出本机，请人工核对确认）</div>';
+    loadInvoices();
+  }).catch(function(){$('btnOcr').disabled=false;$('btnOcr').textContent='本地 OCR 识别';toast('识别请求失败',1)});
+}
+function aiRecognize(){
+  var f=$('invoiceFile').files[0];if(!f)return toast('请上传发票图片',1);
+  $('btnAi').disabled=true;$('btnAi').textContent='识别中...';
+  var fd=new FormData();fd.append('file',f);
+  var pid=$('aiProvider')?$('aiProvider').value:'';
+  if(pid)fd.append('provider',pid);
+  fetch('/api/invoices/ai-recognize',{method:'POST',body:fd}).then(function(r){return r.json()}).then(function(j){
+    $('btnAi').disabled=false;$('btnAi').textContent='AI 识别';
+    if(!j.ok)return toast(j.msg,1);
+    var d=j.data;
+    $('aiResult').innerHTML='<div class="hint">识别成功并已登记台账：发票号码 <b>'+esc(d.invoice_no)+
+      '</b>，发票类型 '+(d.invoice_type?'<span class="tag '+((d.invoice_type||'').indexOf('专')>=0?'red':'')+'">'+esc(d.invoice_type)+'</span>':'未识别')+
+      '，购买方（客户名称）'+esc(d.client_name||'')+(d.review_flag?' <span class="tag red" title="'+esc(d.review_note||'')+'">待核对</span>':'')+
+      '，价税合计 <span class="money">¥ '+fmt(d.total_amount||d.amount)+
+      '</span>，税额 ¥ '+fmt(d.tax_amount)+(d.tax_rate?'，税率 '+esc(d.tax_rate):'')+
+      '，项目名称 '+esc(d.item_name||'—')+'，自动归集科目：<span class="tag doing">'+esc(d.category)+'</span>（请人工核对确认）</div>';
+    loadInvoices();
+  }).catch(function(){$('btnAi').disabled=false;$('btnAi').textContent='AI 识别';toast('识别请求失败',1)});
+}
+function batchInvImport(){
+  var fs=$('batchInvFiles').files;
+  if(!fs||!fs.length)return toast('请至少选择一张发票文件（可多选）',1);
+  $('btnBatchInv').disabled=true;$('btnBatchInv').textContent='批量识别中...';
+  var fd=new FormData();
+  for(var i=0;i<fs.length;i++)fd.append('files',fs[i]);
+  var cno=$('batchCaseNo').value.trim();if(cno)fd.append('case_no',cno);
+  fetch('/api/invoices/batch-import',{method:'POST',body:fd}).then(function(r){return r.json()}).then(function(j){
+    $('btnBatchInv').disabled=false;$('btnBatchInv').textContent='批量导入识别';
+    if(!j.ok){
+      if(j.need_setup){toast(j.msg,1);loadOcrStatus();}
+      else toast(j.msg,1);
+      return;
+    }
+    var h='<div class="hint">共 <b>'+j.total+'</b> 张：成功 <b>'+j.success+'</b> 张，缺字段待补 <b class="tag red">'+j.partial+'</b> 张，识别失败 <b class="tag red">'+j.error+'</b> 张</div>'+
+      '<table style="margin-top:8px"><thead><tr><th>文件</th><th>结果</th><th>发票号码</th><th>类型</th><th>购买方</th><th>项目名称</th><th>科目</th><th>价税合计(¥)</th><th>提示</th></tr></thead><tbody>';
+    j.results.forEach(function(r){
+      var st=r.status==='ok'?'<span class="tag done">成功</span>'
+        :r.status==='partial'?'<span class="tag red">缺字段待补</span>'
+        :'<span class="tag red">失败</span>';
+      h+='<tr><td>'+esc(r.filename)+'</td><td>'+st+'</td><td>'+esc(r.invoice_no||'')+'</td><td>'+
+        (r.invoice_type?'<span class="tag '+((r.invoice_type||'').indexOf('专')>=0?'red':'')+'">'+esc(r.invoice_type)+'</span>':'')+'</td><td>'+esc(r.client_name||'')+'</td><td>'+esc(r.item_name||'')+'</td><td>'+esc(r.category||'')+'</td><td class="money">'+fmt(r.amount||0)+'</td><td>'+esc(r.message||'')+'</td></tr>';
+    });
+    h+='</tbody></table>';
+    $('batchInvResult').innerHTML=h;
+    if(j.error)toast(j.error+' 张识别失败，请查看明细',1);
+    else if(j.partial)toast(j.partial+' 张缺字段待补，请查看明细',1);
+    else toast('批量导入完成：'+j.success+' 张成功');
+    loadInvoices();
+  }).catch(function(){$('btnBatchInv').disabled=false;$('btnBatchInv').textContent='批量导入识别';toast('批量导入请求失败',1)});
+}
+function loadInvoices(){
+  loadOcrStatus();
+  var kw=$('invoiceKw')?($('invoiceKw').value||'').trim():'';
+  var cno=$('invCaseNo')?($('invCaseNo').value||'').trim():'';
+  var buyer=$('invBuyer')?($('invBuyer').value||'').trim():'';
+  var q=[];
+  if(kw)q.push('kw='+encodeURIComponent(kw));
+  if(cno)q.push('case_no='+encodeURIComponent(cno));
+  if(buyer)q.push('buyer='+encodeURIComponent(buyer));
+  api('/api/invoices?'+q.join('&')).then(function(j){
+    // 多对一索引：统计各案件号发票数，自动生成备注
+    var cntMap={};
+    j.data.forEach(function(v){if(v.case_no)cntMap[v.case_no]=(cntMap[v.case_no]||0)+1});
+    var h='';window.__invMap={};j.data.forEach(function(v){
+      window.__invMap[v.id]=v;
+      var multi=(v.case_no&&cntMap[v.case_no]>1);
+      h+='<tr><td>'+esc(v.case_no||'')+(multi?' <span class="tag doing" title="本案号共 '+cntMap[v.case_no]+' 张发票">多票×'+cntMap[v.case_no]+'</span>':'')+'</td>'+
+        '<td>'+esc(v.invoice_no)+'</td><td>'+(v.invoice_type?'<span class="tag '+((v.invoice_type||'').indexOf('专')>=0?'red':'')+'">'+esc(v.invoice_type)+'</span>':'')+'</td><td>'+esc(v.client_name||'')+'</td>'+
+        '<td title="'+esc(v.item_name||'')+'">'+(v.item_name?esc(v.item_name).replace(/^\*[^*]*\*/,'<span style="color:#888">$&</span>'):'')+'</td><td>'+esc(v.seller||'')+(v.review_flag?' <span class="tag red" title="'+esc(v.review_note||'')+'">待核对</span>':'')+'</td><td class="money">'+fmt(v.total_amount||v.amount)+
+        '</td><td class="money">'+fmt(v.tax_amount)+'</td><td>'+esc(v.tax_rate||'')+'</td><td><span class="tag doing">'+esc(v.category)+'</span></td><td>'+
+        esc(v.invoice_date)+'</td><td>'+(v.confirm?'<span class="tag done">已确认</span>':'<span class="tag red">待确认</span>')+'</td><td>'+
+        '<button class="btn sm" onclick="openInvModalById('+v.id+')">编辑</button> '+
+        (v.confirm?'':'<button class="btn sm" onclick="confirmInv('+v.id+')">确认</button> ')+
+        '<button class="btn sm danger" onclick="delInv('+v.id+')">删除</button></td></tr>';
+    });
+    document.querySelector('#invoiceTable tbody').innerHTML=h||'<tr><td colspan="13" class="empty">暂无发票</td></tr>';
+  });
+}
+function openInvModalById(id){openInvModal(window.__invMap[id])}
+function openInvModal(v){
+  $('invId').value = v? v.id : '';
+  $('invModalTitle').textContent = v? '编辑发票' : '新增发票';
+  $('invCaseInput').value = v? (v.case_no||'') : '';
+  $('invNo').value = v? (v.invoice_no||'') : '';
+  $('invBuyer').value = v? (v.client_name||'') : '';
+  $('invSeller').value = v? (v.seller||'ORG_NAME') : 'ORG_NAME';
+  var rb=$('invReviewBox'); if(v&&v.review_flag){rb.style.display='block';$('invReview').textContent='待核对：'+(v.review_note||'');}else{rb.style.display='none';}
+  $('invCat').value = v? (v.category||'') : '';
+  $('invItem').value = v? (v.item_name||'') : '';
+  $('invType').value = v&&v.invoice_type? v.invoice_type : '';
+  $('invAmount').value = v? (v.amount||'') : '';
+  $('invTax').value = v? (v.tax_amount||'') : '';
+  $('invTotal').value = v? (v.total_amount||'') : '';
+  $('invTotalCn').value = v? (v.total_amount_cn||'') : '';
+  $('invRate').value = v? (v.tax_rate||'') : '';
+  $('invBuyerTax').value = v? (v.buyer_tax_id||'') : '';
+  $('invSellerTax').value = v? (v.seller_tax_id||'') : '';
+  $('invDrawer').value = v? (v.drawer||'') : '';
+  $('invRemark').value = v? (v.remark||'') : '';
+  $('invDate').value = v? (v.invoice_date||'') : '';
+  $('invConfirm').checked = v? (!!v.confirm) : false;
+  $('invCaseInput').focus();
+  $('invMask').style.display='flex';
+}
+function saveInv(){
+  var id=$('invId').value;
+  var d={
+    case_no:($('invCaseInput').value||'').trim(),
+    invoice_no:($('invNo').value||'').trim(),
+    client_name:($('invBuyer').value||'').trim(),   // 界面「购买方」即客户名称
+    category:($('invCat').value||'').trim(),
+    item_name:($('invItem').value||'').trim(),
+    invoice_type:($('invType').value||'').trim(),
+    amount:Number($('invAmount').value||0),
+    tax_amount:Number($('invTax').value||0),
+    total_amount:Number($('invTotal').value||0),
+    total_amount_cn:($('invTotalCn').value||'').trim(),
+    tax_rate:($('invRate').value||'').trim(),
+    buyer_tax_id:($('invBuyerTax').value||'').trim(),
+    seller_tax_id:($('invSellerTax').value||'').trim(),
+    drawer:($('invDrawer').value||'').trim(),
+    remark:($('invRemark').value||'').trim(),
+    invoice_date:($('invDate').value||'').trim(),
+    confirm: $('invConfirm').checked?1:0
+  };
+  if(!d.invoice_no && !d.case_no && !d.client_name){
+    return toast('请至少填写发票号码 / 案件号 / 购买方之一',1);
+  }
+  var url = id? ('/api/invoices/'+id) : '/api/invoices';
+  var method = id? 'PUT' : 'POST';
+  api(url,{method:method,body:JSON.stringify(d)}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    closeModal('invMask');toast(id?'已保存':'已新增');loadInvoices()});
+}
+function loadInvoiceCompare(){
+  api('/api/invoices/compare').then(function(j){
+    var h='<table style="margin-top:8px"><thead><tr><th>案件号</th><th>发票数</th><th>开票金额合计(¥)</th><th>案件开票金额(¥)</th><th>差额(¥)</th><th>结果</th></tr></thead><tbody>';
+    (j.data||[]).forEach(function(r){
+      h+='<tr><td>'+esc(r.case_no)+'</td><td>'+r.invoice_count+'</td><td class="money">'+fmt(r.invoice_sum)+
+        '</td><td class="money">'+fmt(r.case_invoice_amount)+'</td><td class="money">'+fmt(r.diff)+
+        '</td><td>'+(r.matched?'<span class="tag done">一致</span>':'<span class="tag red">不一致</span>')+'</td></tr>';
+    });
+    $('invoiceCompareBox').innerHTML=h+'</tbody></table>'+(j.data&&j.data.length?'':'<div class="empty">暂无登记案件号的发票</div>');
+  });
+}
+function confirmInv(id){api('/api/invoices/'+id,{method:'PUT',body:JSON.stringify({confirm:1})}).then(loadInvoices)}
+function delInv(id){if(confirm('确定删除该发票记录？'))api('/api/invoices/'+id,{method:'DELETE'}).then(loadInvoices)}
+
+/* ================= 用户 ================= */
+var _usersById={},_userPermSel=null,_editingUid=null,_userPermRole=null,
+    _roleCfgAll=null,_permLabelsAll=null,_roleDefsAll=null;
+
+function loadUsers(){
+  api('/api/users').then(function(j){
+    _usersById={};j.data.forEach(function(u){_usersById[u.id]=u;});
+    var sel='';Object.keys(j.roles).forEach(function(k){sel+='<option value="'+k+'">'+j.roles[k]+'</option>'});
+    $('nuRole').innerHTML=sel;
+    $('roleDesc').innerHTML='角色说明：财务经理=最高权限（全部数据+用户+系统配置）；财务专员=案件财务字段+薪酬+结算单+发票；案件专员=案件基本信息录入；查看人员=只读；<b>机构负责人</b>=机构全局管理+审批结案+管理本机构人员；<b>律师</b>=案件基本信息录入与维护。';
+    var h='';j.data.forEach(function(u){
+      h+='<tr><td>'+esc(u.username)+'</td><td>'+esc(u.display_name)+'</td><td>'+esc(j.roles[u.role])+
+        '</td><td>'+(u.active?'<span class="tag done">启用</span>':'<span class="tag red">停用</span>')+'</td><td>'+
+        esc(u.created_at)+'</td><td>'+
+        '<button class="btn sm" onclick="resetPwd('+u.id+')">重置密码</button> '+
+        (u.username!=='admin'
+          ? '<button class="btn sm" onclick="openUserPermModal('+u.id+')">权限</button> '+
+            '<button class="btn sm danger" onclick="disableUser('+u.id+')">停用</button> '+
+            '<button class="btn sm danger" onclick="deleteUser('+u.id+')">删除</button>'
+          : '')+'</td></tr>'});
+    document.querySelector('#userTable tbody').innerHTML=h;
+  }).catch(function(e){toast((e&&e.friendlyMsg)||'加载用户列表失败',1)});
+}
+function onNuRoleChange(){_userPermSel=null;$('nuPermSummary').textContent='';}
+function addUser(){
+  var body={username:$('nuName').value,display_name:$('nuDisplay').value,
+    password:$('nuPwd').value,role:$('nuRole').value};
+  if(_userPermSel)body.perms=Object.keys(_userPermSel);
+  api('/api/users',{method:'POST',body:JSON.stringify(body)}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    toast('用户已创建');_userPermSel=null;$('nuPermSummary').textContent='';loadUsers();
+    $('nuName').value='';$('nuDisplay').value='';$('nuPwd').value='';
+  }).catch(function(e){toast((e&&e.friendlyMsg)||'创建用户失败',1)});
+}
+function resetPwd(id){
+  var p=prompt('输入新密码（至少6位）:');if(!p)return;
+  api('/api/users/'+id,{method:'PUT',body:JSON.stringify({password:p})}).then(function(j){
+    toast(j.ok?'密码已重置':j.msg,!j.ok)});
+}
+function disableUser(id){
+  if(!confirm('确定停用该用户？停用后该账号将无法登录，可在列表中重新启用。'))return;
+  api('/api/users/'+id,{method:'PUT',body:JSON.stringify({active:0})}).then(loadUsers)
+    .catch(function(e){toast((e&&e.friendlyMsg)||'停用失败',1)});
+}
+function deleteUser(id){
+  var u=_usersById[id];var uname=u?(u.display_name||u.username):('ID '+id);
+  if(!confirm('确定删除用户「'+uname+'」？\n删除将移除该账号，并清理其个人薪酬规则与账号记录，操作不可恢复！'))return;
+  if(!confirm('再次确认：删除用户「'+uname+'」不可恢复，是否继续？'))return;
+  api('/api/users/'+id,{method:'DELETE'}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    toast('用户已删除');loadUsers();
+  }).catch(function(e){toast((e&&e.friendlyMsg)||'删除失败',1)});
+}
+
+/* ================= 用户权限配置弹窗 ================= */
+function permsOfRoleClient(roleKey,cfg){
+  cfg=cfg||_roleCfgAll||{};var out=[];
+  Object.keys(cfg).forEach(function(p){if(cfg[p].indexOf(roleKey)>=0)out.push(p);});
+  return out;
+}
+function openUserPermModal(uid){
+  _editingUid=uid;
+  var roleKey=(uid==null)?$('nuRole').value:(_usersById[uid]?_usersById[uid].role:null);
+  if(!roleKey){toast('请先选择角色',1);return;}
+  _userPermRole=roleKey;
+  api('/api/role-config').then(function(j){
+    if(!j.ok){toast(j.msg||'加载权限失败',1);return;}
+    _roleCfgAll=j.perms||{};_permLabelsAll=j.perm_labels||{};_roleDefsAll=j.roles||{};
+    var u=(uid==null)?null:_usersById[uid];
+    $('permModalSub').textContent='（'+(uid==null?'新建用户':'编辑：'+esc(u.display_name))+
+      ' · 角色：'+esc((_roleDefsAll[roleKey]||{name:roleKey}).name)+'）';
+    var stored=(u&&u.perms)?JSON.parse(u.perms):null;
+    var defaults=(stored&&stored.length)?stored:permsOfRoleClient(roleKey,_roleCfgAll);
+    _userPermSel={};defaults.forEach(function(p){_userPermSel[p]=true;});
+    renderUserPermTable();
+    $('permMask').style.display='flex';
+  }).catch(function(e){toast((e&&e.friendlyMsg)||'加载权限失败',1)});
+}
+function renderUserPermTable(){
+  if(!_roleCfgAll)return;
+  var rows='';
+  Object.keys(_roleCfgAll).sort().forEach(function(p){
+    var label=(_permLabelsAll&&_permLabelsAll[p])||p;
+    var checked=_userPermSel[p]?'checked':'';
+    rows+='<tr><td style="padding:7px 10px;border-bottom:1px solid #eef;text-align:left">'+esc(label)+
+      '<div class="hint">'+esc(p)+'</div></td>'+
+      '<td style="text-align:center;padding:7px 10px;border-bottom:1px solid #eef">'+
+      '<input type="checkbox" data-uperm="'+esc(p)+'" '+checked+' style="width:auto;cursor:pointer"></td></tr>';
+  });
+  $('userPermBody').innerHTML=rows;
+}
+function confirmUserPerm(){
+  var sel=[];
+  document.querySelectorAll('#userPermBody input[data-uperm]:checked').forEach(function(cb){sel.push(cb.dataset.uperm);});
+  _userPermSel={};sel.forEach(function(p){_userPermSel[p]=true;});
+  if(_editingUid==null){
+    $('nuPermSummary').textContent=sel.length
+      ? ('已为新建用户配置 '+sel.length+' 项权限（将覆盖角色默认）')
+      : '未单独配置，将继承所选角色默认权限';
+    closeModal('permMask');
+  }else{
+    api('/api/users/'+_editingUid,{method:'PUT',body:JSON.stringify({perms:sel})}).then(function(j){
+      if(!j.ok)return toast(j.msg||'保存失败',1);
+      toast('权限已更新');closeModal('permMask');loadUsers();
+    }).catch(function(e){toast((e&&e.friendlyMsg)||'保存失败',1)});
+  }
+}
+
+/* ================= 日志 ================= */
+function loadLogs(){
+  api('/api/logs?kw='+encodeURIComponent($('logKw').value||'')).then(function(j){
+    var h='';j.data.forEach(function(l){
+      var act={create:'新增',update:'修改','delete':'删除',query:'查询',login:'登录',logout:'退出',
+        'export':'导出','import':'导入'}[l.action]||l.action;
+      h+='<tr><td>'+esc(l.created_at)+'</td><td>'+esc(l.username)+'</td><td>'+act+'</td><td>'+
+        esc(l.object_type)+'</td><td>'+esc(l.object_id)+'</td><td class="hint">'+esc(l.detail)+'</td><td>'+esc(l.ip)+'</td></tr>'});
+    document.querySelector('#logTable tbody').innerHTML=h||'<tr><td colspan="7" class="empty">暂无日志</td></tr>';
+  });
+}
+
+/* ================= 设置 ================= */
+function loadSettings(){
+  api('/api/settings').then(function(j){var d=j.data;
+    $('setFirm').value=d.firm_name||'';$('setPair').value=d.pair_code||'';
+    $('setCaseNoSeqStart').value=d.case_no_seq_start||'1';
+    $('setTpl').value=d.settle_template||'';
+    $('setCats').value=d.fee_categories||'';
+    // 案件类型选项：JSON 数组 → 顿号分隔文本回显
+    try{var ct=d.case_types?JSON.parse(d.case_types):[];
+      $('setCaseTypes').value=(ct||[]).join('、');}catch(e){$('setCaseTypes').value=d.case_types||''}
+    loadAiProviders();
+    loadSectionEditor();
+    loadBackupPage();
+    loadRoleConfig();
+  });
+}
+/* ---------- 案件类型「板块」配置编辑器（系统设置） ---------- */
+function loadSectionEditor(){
+  loadCaseTypes(function(){
+    var h='<option value="">— 选择案件类型 —</option>';
+    (_caseTypes||[]).forEach(function(t){h+='<option value="'+esc(t)+'">'+esc(t)+'</option>'});
+    $('setSectionTypeSel').innerHTML=h;
+  });
+  loadCaseTypeSectionsGlobal();
+}
+function loadSectionList(){
+  var t=$('setSectionTypeSel').value;
+  var arr=(_caseTypeSections&&_caseTypeSections[t])||[];
+  $('setSectionList').value=arr.join('，');
+}
+function saveCaseTypeSections(){
+  var t=$('setSectionTypeSel').value;
+  if(!t)return toast('请选择案件类型',1);
+  var arr=$('setSectionList').value.split(/[,，]/).map(function(s){return s.trim()}).filter(Boolean);
+  var seen={},uniq=[];arr.forEach(function(s){if(!seen[s]){seen[s]=1;uniq.push(s)}});
+  var data=Object.assign({},_caseTypeSections||{});
+  data[t]=uniq;
+  api('/api/case-type-sections',{method:'PUT',body:JSON.stringify({sections:data})}).then(function(j){
+    if(!j.ok)return toast(j.msg,1);
+    _caseTypeSections=j.data;toast('已保存「'+t+'」的板块配置');loadSectionList();
+  });
+}
+function saveSettings(){
+  var d={firm_name:$('setFirm').value,pair_code:$('setPair').value,
+    case_no_seq_start:$('setCaseNoSeqStart').value,
+    settle_template:$('setTpl').value,fee_categories:$('setCats').value};
+  // 案件类型选项：顿号/逗号分隔 → JSON 数组（B2）
+  var ctArr=$('setCaseTypes').value.split(/[、,，;；\s]+/)
+    .map(function(s){return s.trim()}).filter(function(s){return s});
+  if(ctArr.length)d.case_types=JSON.stringify(ctArr);
+  api('/api/settings',{method:'PUT',body:JSON.stringify(d)}).then(function(j){
+    toast(j.ok?'设置已保存':j.msg,!j.ok)});
+}
+
+/* ================= 人员角色权限管理 ================= */
+var _roleCfg = null;   // 当前已保存的权限矩阵 {perm: [role,...]}
+var _roleDefs = null;  // 角色定义 {key:{name,desc}}
+var _permLabels = null;// 权限中文标签
+
+function loadRoleConfig(){
+  api('/api/role-config').then(function(j){
+    if(!j.ok){toast(j.msg||'加载角色配置失败',1);return;}
+    _roleCfg = j.perms || {};
+    _roleDefs = j.roles || {};
+    _permLabels = j.perm_labels || {};
+    if(j.config_path) $('roleConfigPath').textContent = j.config_path;
+    renderRolePermTable();
+  });
+}
+
+// 把内存中的勾选状态收集为 {perm: [role,...]}；admin 在 setting.manage 上强制勾选且不可取消
+function collectRoleCfgFromUI(){
+  var perms = {};
+  Object.keys(_permCfg).forEach(function(perm){
+    var roles = [];
+    document.querySelectorAll('input[data-perm="'+perm+'"]:checked').forEach(function(cb){
+      if(roles.indexOf(cb.dataset.role)===-1) roles.push(cb.dataset.role);
+    });
+    // 强制约束：admin 必须保留 setting.manage
+    if(perm==='setting.manage' && roles.indexOf('admin')===-1) roles.push('admin');
+    perms[perm] = roles;
+  });
+  return perms;
+}
+
+function renderRolePermTable(){
+  if(!_roleCfg || !_roleDefs) return;
+  _roleCfg = collectRoleCfgFromUIFallback();  // 保留当前 UI 状态
+  var permKeys = Object.keys(_permCfg = _roleCfg);
+  var roleKeys = Object.keys(_roleDefs);
+  // 表头：权限 \ 角色
+  var thead = '<tr><th style="text-align:left;min-width:180px">权限 \\ 角色</th>';
+  roleKeys.forEach(function(rk){
+    var rd = _roleDefs[rk];
+    thead += '<th style="text-align:center;min-width:90px" title="'+esc(rd.desc||'')+'">'
+           + esc(rd.name) + '</th>';
+  });
+  thead += '</tr>';
+  $('rolePermHead').innerHTML = thead;
+  // 表体
+  var rows = '';
+  permKeys.forEach(function(pk){
+    var label = _permLabels[pk] || pk;
+    var roles = _roleCfg[pk] || [];
+    rows += '<tr><td style="text-align:left">'+esc(label)
+          + '<div class="hint" style="font-size:12px">'+esc(pk)+'</div></td>';
+    roleKeys.forEach(function(rk){
+      var checked = roles.indexOf(rk) >= 0 ? 'checked' : '';
+      // setting.manage 的 admin 不可取消
+      var disabled = (pk==='setting.manage' && rk==='admin') ? 'disabled' : '';
+      rows += '<td style="text-align:center"><input type="checkbox" data-perm="'+esc(pk)
+            +'" data-role="'+esc(rk)+'" '+checked+' '+disabled
+            +' style="width:auto;cursor:pointer"></td>';
+    });
+    rows += '</tr>';
+  });
+  $('rolePermBody').innerHTML = rows;
+}
+
+// 首次加载时（_roleCfg 尚未被 UI 覆盖）的回退收集
+function collectRoleCfgFromUIFallback(){
+  // 如果之前已渲染过表格，从 DOM 读取最新勾选；否则用 _roleCfg
+  if(!document.querySelector('#rolePermBody input')) return _roleCfg;
+  var perms = {};
+  document.querySelectorAll('#rolePermBody input[data-perm]').forEach(function(cb){
+    var p = cb.dataset.perm, r = cb.dataset.role;
+    if(cb.checked){
+      if(!perms[p]) perms[p] = [];
+      if(perms[p].indexOf(r)===-1) perms[p].push(r);
+    } else if(!perms[p]) perms[p] = [];
+  });
+  Object.keys(_roleCfg).forEach(function(k){ if(!perms[k]) perms[k] = _roleCfg[k] || []; });
+  return perms;
+}
+
+function confirmRoleConfig(){
+  if(!_roleCfg) return toast('请先加载角色配置',1);
+  var collected = collectRoleCfgFromUIFallback();
+  var lines = ['<b>即将保存的角色权限配置：</b><br>'];
+  Object.keys(collected).sort().forEach(function(pk){
+    var label = _permLabels[pk] || pk;
+    var roles = collected[pk] || [];
+    var names = roles.map(function(r){ return (_roleDefs[r]||{name:r}).name; }).join('、') || '<span class="hint">（无）</span>';
+    lines.push('• '+esc(label)+'：'+esc(names)+'<br>');
+  });
+  lines.push('<br><span class="hint">请确认以上信息无误后点击「保存设置」生效。</span>');
+  $('roleConfigSummary').innerHTML = lines.join('');
+  toast('已生成配置预览，请检查后保存');
+}
+
+function saveRoleConfig(){
+  if(!_roleCfg) return toast('请先加载角色配置',1);
+  var perms = collectRoleCfgFromUIFallback();
+  // 前端二次校验：admin 必须有 setting.manage（防止误操作锁死）
+  if(!perms['setting.manage'] || perms['setting.manage'].indexOf('admin')===-1){
+    return toast('权限校验失败：admin 必须保留「系统设置」权限',1);
+  }
+  api('/api/role-config',{method:'PUT',body:JSON.stringify({perms:perms})}).then(function(j){
+    if(!j.ok) return toast(j.msg||'保存失败',1);
+    _roleCfg = j.perms || _roleCfg;
+    renderRolePermTable();
+    $('roleConfigSummary').innerHTML='<span style="color:#16a34a">✓ 角色权限已保存并立即生效（已写入 data/role_config.json）</span>';
+    toast('角色权限已保存');
+  });
+}
+
+/* ================= 数据自动备份 ================= */
+var _bkTimer=null;
+function renderBkSchedule(){
+  var s=$('bkSchedule').value;
+  $('bkTimeBox').style.display=(s==='daily'||s==='weekly')?'':'none';
+  $('bkWeekdayBox').style.display=(s==='weekly')?'':'none';
+  $('bkIntervalBox').style.display=(s==='interval')?'':'none';
+}
+function bkScopeObj(){
+  return {db:$('bkScopeDb').checked?1:0,uploads:$('bkScopeUploads').checked?1:0,
+    templates:$('bkScopeTpl').checked?1:0,config:$('bkScopeCfg').checked?1:0};
+}
+function loadBackupPage(){
+  api('/api/backup/config').then(function(j){
+    if(!j.ok)return; var d=j.data||{};
+    $('bkEnabled').checked=String(d.backup_enabled)==='1';
+    $('bkPath').value=d.backup_path||'';
+    $('bkSchedule').value=d.backup_schedule||'daily';
+    $('bkTime').value=d.backup_time||'23:00';
+    $('bkWeekday').value=String(d.backup_weekday||'5');
+    $('bkInterval').value=d.backup_interval_hours||'24';
+    $('bkKeep').value=d.backup_keep||'10';
+    var sc={};try{sc=JSON.parse(d.backup_scope||'{}')}catch(e){}
+    $('bkScopeDb').checked=sc.db!==0;
+    $('bkScopeUploads').checked=sc.uploads!==0;
+    $('bkScopeTpl').checked=sc.templates!==0;
+    $('bkScopeCfg').checked=sc.config!==0;
+    renderBkSchedule();
+  });
+  refreshBkStatus(true);
+}
+function saveBackupConfig(){
+  var d={backup_enabled:$('bkEnabled').checked?'1':'0',
+    backup_path:$('bkPath').value.trim(),
+    backup_schedule:$('bkSchedule').value,
+    backup_time:$('bkTime').value||'23:00',
+    backup_weekday:$('bkWeekday').value,
+    backup_interval_hours:$('bkInterval').value||'24',
+    backup_keep:$('bkKeep').value||'0',
+    backup_scope:JSON.stringify(bkScopeObj())};
+  api('/api/backup/config',{method:'PUT',body:JSON.stringify(d)}).then(function(j){
+    toast(j.ok?'备份配置已保存':(j.msg||'保存失败'),!j.ok); refreshBkStatus(true);});
+}
+function runBackupNow(){
+  var btn=$('bkRunBtn'); btn.disabled=true;
+  api('/api/backup/run',{method:'POST'}).then(function(j){
+    if(!j.ok){toast(j.msg||'启动备份失败',1);btn.disabled=false;return;}
+    toast('备份已开始，正在执行...'); startBkPolling();
+  });
+}
+function startBkPolling(){
+  clearInterval(_bkTimer);
+  _bkTimer=setInterval(function(){refreshBkStatus(false)},1500);
+  refreshBkStatus(false);
+}
+function refreshBkStatus(loadList){
+  api('/api/backup/status').then(function(j){
+    if(!j.ok)return; var s=j.data||{};
+    var running=!!s._running;
+    $('bkRunBtn').disabled=running;
+    if(running){
+      $('bkProgressBox').style.display='block';
+      $('bkProgressText').textContent=s.backup_progress||'正在备份...';
+      // 进度条：有明确阶段时展示脉冲动画（阶段未知时长），执行完成后隐藏
+      var bar=$('bkProgressBar'); bar.style.width='70%';
+      $('bkState').innerHTML='<span class="tag doing">备份中…</span>';
+    }else{
+      clearInterval(_bkTimer); _bkTimer=null;
+      if($('bkProgressBox').style.display==='block'){
+        var bar=$('bkProgressBar'); bar.style.width='100%';
+        var self=this;
+        setTimeout(function(){$('bkProgressBox').style.display='none';bar.style.width='0%';},800);
+      }
+      var r=s._last_result||{};
+      if(r&&r.ok){
+        $('bkState').innerHTML='<span class="tag done">上次备份成功</span> <span style="color:var(--kd-sub)">'+
+          esc(r.file||'')+' · '+fmtSize(r.size||0)+(r.cost?' · 耗时 '+r.cost+'s':'')+'</span>';
+      }else if(r&&r.error){
+        $('bkState').innerHTML='<span class="tag red" title="'+esc(r.error)+'">上次备份失败</span> '+
+          '<span style="color:#d93026">'+esc(r.error)+'</span>';
+      }
+    }
+    if(loadList||!running){renderBkList();renderBkLog();}
+  });
+}
+function renderBkList(){
+  api('/api/backup/list').then(function(j){
+    if(!j.ok)return;
+    var rows=j.data||[];
+    var h=rows.map(function(v){
+      return '<tr><td>'+esc(v.name)+'</td><td class="money">'+fmtSize(v.size)+'</td><td>'+esc(v.mtime)+'</td><td>'+
+        '<button class="btn sm" onclick="downloadBackup(\''+esc(v.name)+'\')">下载</button> '+
+        '<button class="btn sm danger" onclick="deleteBackup(\''+esc(v.name)+'\')">删除</button></td></tr>';
+    }).join('');
+    document.querySelector('#bkTable tbody').innerHTML=h||'<tr><td colspan="4" class="empty">暂无备份，点击「立即备份」创建</td></tr>';
+  });
+}
+function renderBkLog(){
+  api('/api/backup/log').then(function(j){
+    if(!j.ok)return;
+    $('bkLog').textContent=(j.data||[]).join('\n')||'（暂无日志）';
+  });
+}
+function fmtSize(b){
+  if(!b&&b!==0)return '';
+  if(b<1024)return b+' B';
+  if(b<1048576)return (b/1024).toFixed(1)+' KB';
+  if(b<1073741824)return (b/1048576).toFixed(2)+' MB';
+  return (b/1073741824).toFixed(2)+' GB';
+}
+function downloadBackup(name){
+  window.open('/api/backup/download/'+encodeURIComponent(name));
+}
+function deleteBackup(name){
+  if(!confirm('确定删除备份 '+name+' ？'))return;
+  api('/api/backup/delete/'+encodeURIComponent(name),{method:'DELETE'}).then(function(j){
+    toast(j.msg||(j.ok?'已删除':'删除失败'),!j.ok); renderBkList();});
+}
+function cleanupBackups(){
+  api('/api/backup/cleanup',{method:'POST'}).then(function(j){
+    toast(j.msg||(j.ok?'清理完成':'清理失败'),!j.ok); renderBkList();});
+}
+
+/* ================= AI 多服务商配置 ================= */
+function loadAiProviders(){
+  api('/api/ai/providers').then(function(j){
+    if(!j.ok)return; var st=j.data; var box=$('aiProvidersBox');
+    var list=objVals(st.providers);
+    var html='<div class="ai-prov-h">激活服务商：'+
+      '<select id="aiActiveSel" onchange="renderAiProviderForms()">'+
+      list.map(function(p){return '<option value="'+esc(p.id)+'"'+(p.id===st.active?' selected':'')+'>'+esc(p.name)+'</option>'}).join('')+
+      '</select></div><div id="aiProvForms"></div>';
+    box.innerHTML=html;
+    renderAiProviderForms();
+  });
+  api('/api/ai/protocols').then(function(j){
+    if(!j.ok)return; var data=objVals(j.data); var box=$('aiProtocolsBox');
+    box.innerHTML='<h4 style="margin:14px 0 8px">各服务商接口协议</h4>'+data.map(function(p){
+      return '<div class="proto-item"><b>'+esc(p.name)+'</b> <span class="tag">'+esc(p.protocol||'')+'</span>'+
+        '<div class="proto-detail">'+esc(p.detail||'')+'</div></div>';
+    }).join('');
+  });
+}
+function renderAiProviderForms(){
+  var sel=$('aiActiveSel'); if(!sel)return;
+  var pid=sel.value;
+  api('/api/ai/providers').then(function(j){
+    if(!j.ok)return; var st=j.data; var prov=objVals(st.providers);
+    var cur=prov.filter(function(p){return p.id===pid})[0]||{id:pid,name:pid};
+    var html='<div class="ai-prov-form" data-pid="'+esc(pid)+'">'+
+      '<div class="ai-prov-title">'+esc(cur.name||pid)+' 配置</div>'+
+      '<div class="form-row">'+
+        '<div class="form-item"><label>API 地址 / Base URL</label><input data-f="base_url" value="'+esc(cur.base_url||'')+'"></div>'+
+        '<div class="form-item"><label>模型名</label><input data-f="model" value="'+esc(cur.model||'')+'"></div>'+
+        '<div class="form-item"><label>API 密钥（仅存本地配置文件，不入库）</label><input data-f="api_key" placeholder="留空则不修改" type="password"></div>'+
+      '</div></div>';
+    $('aiProvForms').innerHTML=html;
+  });
+}
+function saveAiProviders(){
+  var sel=$('aiActiveSel'); if(!sel)return toast('请先刷新 AI 服务商列表',1);
+  var active=sel.value;
+  var forms=document.querySelectorAll('#aiProvForms .ai-prov-form');
+  var providers={};
+  forms.forEach(function(fm){
+    var pid=fm.getAttribute('data-pid');
+    var rows={};
+    fm.querySelectorAll('[data-f]').forEach(function(inp){rows[inp.getAttribute('data-f')]=inp.value;});
+    providers[pid]=rows;
+  });
+  // 合并页面上其它未展开的服务商（保持原值）：用当前 active 之外的列表补齐
+  api('/api/ai/providers').then(function(j){
+    var st=(j&&j.data)||{providers:[]};
+    (st.providers||[]).forEach(function(p){
+      if(p.id===active)return;
+      if(!providers[p.id])providers[p.id]={base_url:p.base_url||'',model:p.model||'',api_key:''};
+    });
+    api('/api/ai/providers',{method:'PUT',body:JSON.stringify({active:active,providers:providers})}).then(function(r){
+      if(!r.ok)return toast(r.msg||'保存失败',1);
+      toast('AI 服务商配置已保存（密钥仅写本地文件）'); loadAiProviders();
+    });
+  });
+}
+function loadAiProtocol(){
+  var sel=$('aiProvider'); if(!sel)return;
+  var pid=sel.value;
+  api('/api/ai/protocols').then(function(j){
+    if(!j.ok)return; var data=objVals(j.data); var p=data.filter(function(x){return x.id===pid})[0];
+    $('aiProtocol').innerHTML=p?('<div class="proto-box"><b>'+esc(p.name)+'</b> · <span class="tag">'+esc(p.protocol||'')+'</span>'+
+      '<div class="proto-detail">'+esc(p.detail||'')+'</div></div>'):'';
+  });
+}
+function loadAiProviderOptions(){
+  var sel=$('aiProvider'); if(!sel)return;
+  var prev=sel.value;
+  api('/api/ai/protocols').then(function(j){
+    if(!j.ok)return; var data=objVals(j.data);
+    sel.innerHTML=data.map(function(p){return '<option value="'+esc(p.id)+'">'+esc(p.name)+'</option>'}).join('');
+    if(prev)sel.value=prev;
+    loadAiProtocol();
+  });
+}
+
+/* ================= 密码 ================= */
+function openPwdModal(){$('pwOld').value='';$('pwNew').value='';$('pwdMask').style.display='flex'}
+function savePwd(){
+  api('/api/password',{method:'POST',body:JSON.stringify({old:$('pwOld').value,'new':$('pwNew').value})})
+    .then(function(j){if(!j.ok)return toast(j.msg,1);closeModal('pwdMask');toast('密码已修改')});
+}
+</script>
+</body>
+</html>
